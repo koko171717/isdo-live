@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ISDO Live — Overlay V3.3</title>
+<title>ISDO Live — Overlay V3.4</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
@@ -12,14 +12,13 @@
   --white:#ffffff;
   --cream:#f5f1e8;
   --accent:#27c7be;
-  --accent2:#0b8f8a;
   --muted:rgba(255,255,255,.70);
   --half:#f0c95a;
 }
 html,body{
   margin:0;width:100%;height:100%;overflow:hidden;
   background:transparent!important;
-  font-family:Arial, Helvetica, sans-serif;
+  font-family:Arial,Helvetica,sans-serif;
 }
 .stage{position:relative;width:100vw;height:100vh;background:transparent}
 .wrap{
@@ -36,7 +35,8 @@ html,body{
   justify-content:center;
   height:22px;
   padding:0 12px;
-  margin-left:14px;
+  margin-left:12px;
+  margin-bottom:-1px;
   background:var(--accent);
   color:#07221f;
   font-size:10px;
@@ -47,7 +47,7 @@ html,body{
 }
 .mainbar{
   display:grid;
-  grid-template-columns:1fr auto 1fr;
+  grid-template-columns:1fr 96px 1fr;
   align-items:center;
   min-height:52px;
   background:var(--ink);
@@ -101,7 +101,6 @@ html,body{
   align-items:center;
   justify-content:center;
   gap:7px;
-  min-width:94px;
   height:52px;
   background:var(--ink2);
   border-left:1px solid rgba(255,255,255,.08);
@@ -119,10 +118,11 @@ html,body{
   font-size:16px;
   font-weight:800;
 }
+
+/* V3.4: timing block aligned exactly under the center score column */
 .info{
   width:255px;
-  margin-left:auto;
-  margin-right:22px;
+  margin:0 auto;
   background:#eef2f5;
   color:#12202d;
   border-radius:0 0 4px 4px;
@@ -172,7 +172,6 @@ html,body{
 }
 .halftime .info{
   width:190px;
-  margin-right:55px;
 }
 .halftime .info-top{
   background:var(--half);
@@ -331,7 +330,7 @@ async function loadMatch(){
   }
 }
 
-db.channel("matches-overlay-v3-3")
+db.channel("matches-overlay-v3-4")
   .on("postgres_changes",{event:"*",schema:"public",table:"matches"},payload=>{
     if(payload.new && (!matchId || payload.new.id===matchId)){
       match=payload.new;
