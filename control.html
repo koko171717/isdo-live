@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>ISDO Live — Contrôle</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: #0c1117; color: #fff; min-height: 100vh;
+    }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 18px; }
+    h1 { margin: 0 0 14px; font-size: 22px; }
+    .card {
+      background: #151c24; border: 1px solid #26303d; border-radius: 18px;
+      padding: 16px; margin-bottom: 14px;
+    }
+    .teams { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .team { text-align: center; }
+    input {
+      width: 100%; background: #0e141b; color: #fff; border: 1px solid #344252;
+      border-radius: 10px; padding: 12px; font-size: 16px;
+    }
+    .score { font-size: 64px; font-weight: 800; line-height: 1; margin: 14px 0; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    button {
+      appearance: none; border: 0; border-radius: 12px; padding: 14px 18px;
+      font-size: 17px; font-weight: 700; cursor: pointer;
+    }
+    .btn { background: #e9eef5; color: #10161d; }
+    .danger { background: #ff6b6b; color: #171717; }
+    .accent { background: #71e6c1; color: #102019; }
+    .ghost { background: #26303d; color: #fff; }
+    .timer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .timer { text-align: center; }
+    .label { opacity: .7; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; }
+    .time { font-size: 52px; font-weight: 800; margin: 8px 0 12px; font-variant-numeric: tabular-nums; }
+    .half { text-align: center; font-size: 24px; font-weight: 800; margin-bottom: 10px; }
+    .status { text-align: center; margin-top: 10px; opacity: .75; font-size: 14px; }
+    @media (max-width: 650px) {
+      .teams, .timer-grid { grid-template-columns: 1fr; }
+      .score { font-size: 56px; }
+      .time { font-size: 46px; }
+      button { flex: 1; min-width: 120px; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ISDO Live — Contrôle arbitre</h1>
+
+  <div class="card teams">
+    <div class="team">
+      <input id="teamA" value="Team A" aria-label="Nom équipe A" />
+      <div class="score" id="scoreA">0</div>
+      <div class="row">
+        <button class="ghost" onclick="changeScore('a', -1)">−</button>
+        <button class="accent" onclick="changeScore('a', 1)">+</button>
+      </div>
+    </div>
+    <div class="team">
+      <input id="teamB" value="Team B" aria-label="Nom équipe B" />
+      <div class="score" id="scoreB">0</div>
+      <div class="row">
+        <button class="ghost" onclick="changeScore('b', -1)">−</button>
+        <button class="accent" onclick="changeScore('b', 1)">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="half" id="halfText">Mi-temps 1</div>
+    <div class="row">
+      <button class="btn" id="halfBtn" onclick="toggleHalf()">Passer à la mi-temps 2</button>
+    </div>
+  </div>
+
+  <div class="card timer-grid">
+    <div class="timer">
+      <div class="label">Match — mi-temps</div>
+      <div class="time" id="gameTime">15:00</div>
+      <div class="row">
+        <button class="accent" id="gameBtn" onclick="toggleTimer('game')">Démarrer</button>
+        <button class="ghost" onclick="resetGame()">Reset 15:00</button>
+      </div>
+    </div>
+    <div class="timer">
+      <div class="label">Set</div>
+      <div class="time" id="setTime">03:00</div>
+      <div class="row">
+        <button class="accent" id="setBtn" onclick="toggleTimer('set')">Démarrer</button>
+        <button class="ghost" onclick="resetSet()">Reset 03:00</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <button class="danger" id="pauseBtn" onclick="toggleGeneralPause()">PAUSE GÉNÉRALE</button>
+      <button class="ghost" onclick="resetAll()">Nouveau match / Reset</button>
+    </div>
+    <div class="status" id="status">Connexion…</div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://orqvmsttedmtenvrwfzk.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Nfs8j9E7aiQea5VHC_hD-Q_tHm7nWv3";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let match = null;
+let matchId = null;
+let ticking = false;
+
+function fmt(sec) {
+  sec = Math.max(0, Number(sec || 0));
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+async function loadMatch() {
+  const { data, error } = await db.from('matches').select('*').order('id', {ascending:true}).limit(1).single();
+  if (error) return setStatus('Erreur lecture: ' + error.message);
+  match = data; matchId = data.id;
+  render();
+  setStatus('Connecté');
+}
+
+function render() {
+  if (!match) return;
+  document.getElementById('teamA').value = match.team_a_name ?? 'Team A';
+  document.getElementById('teamB').value = match.team_b_name ?? 'Team B';
+  document.getElementById('scoreA').textContent = match.score_a ?? 0;
+  document.getElementById('scoreB').textContent = match.score_b ?? 0;
+  document.getElementById('gameTime').textContent = fmt(match.game_seconds);
+  document.getElementById('setTime').textContent = fmt(match.set_seconds);
+  document.getElementById('halfText').textContent = 'Mi-temps ' + (match.half_number || 1);
+  document.getElementById('halfBtn').textContent = (match.half_number === 2) ? 'Revenir à la mi-temps 1' : 'Passer à la mi-temps 2';
+  document.getElementById('gameBtn').textContent = match.game_running ? 'Pause chrono match' : 'Démarrer chrono match';
+  document.getElementById('setBtn').textContent = match.set_running ? 'Pause chrono set' : 'Démarrer chrono set';
+  document.getElementById('pauseBtn').textContent = match.general_paused ? 'REPRENDRE LE JEU' : 'PAUSE GÉNÉRALE';
+}
+
+function setStatus(t) { document.getElementById('status').textContent = t; }
+
+async function patch(fields) {
+  if (!matchId) return;
+  const payload = { ...fields, updated_at: new Date().toISOString() };
+  const { data, error } = await db.from('matches').update(payload).eq('id', matchId).select().single();
+  if (error) return setStatus('Erreur: ' + error.message);
+  match = data; render(); setStatus('Synchronisé');
+}
+
+async function changeScore(side, delta) {
+  const key = side === 'a' ? 'score_a' : 'score_b';
+  await patch({ [key]: Math.max(0, Number(match[key] || 0) + delta) });
+}
+
+async function toggleTimer(which) {
+  const key = which === 'game' ? 'game_running' : 'set_running';
+  await patch({ [key]: !match[key] });
+}
+
+async function resetGame() { await patch({ game_seconds: 900, game_running: false }); }
+async function resetSet() { await patch({ set_seconds: 180, set_running: false }); }
+
+async function toggleGeneralPause() {
+  await patch({ general_paused: !match.general_paused });
+}
+
+async function toggleHalf() {
+  const next = match.half_number === 2 ? 1 : 2;
+  await patch({
+    half_number: next,
+    game_seconds: 900,
+    game_running: false,
+    set_seconds: 180,
+    set_running: false,
+    general_paused: false
+  });
+}
+
+async function resetAll() {
+  if (!confirm('Remettre score, chronos et mi-temps à zéro ?')) return;
+  await patch({
+    score_a: 0, score_b: 0,
+    game_seconds: 900, game_running: false,
+    set_seconds: 180, set_running: false,
+    half_number: 1, general_paused: false
+  });
+}
+
+document.getElementById('teamA').addEventListener('change', e => patch({ team_a_name: e.target.value.trim() || 'Team A' }));
+document.getElementById('teamB').addEventListener('change', e => patch({ team_b_name: e.target.value.trim() || 'Team B' }));
+
+setInterval(async () => {
+  if (!match || ticking || match.general_paused) return;
+  const updates = {};
+  if (match.game_running && match.game_seconds > 0) updates.game_seconds = match.game_seconds - 1;
+  if (match.set_running && match.set_seconds > 0) updates.set_seconds = match.set_seconds - 1;
+  if (match.game_running && match.game_seconds <= 1) updates.game_running = false;
+  if (match.set_running && match.set_seconds <= 1) updates.set_running = false;
+  if (!Object.keys(updates).length) return;
+  ticking = true;
+  await patch(updates);
+  ticking = false;
+}, 1000);
+
+db.channel('matches-control')
+  .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'matches' }, payload => {
+    if (matchId && payload.new.id === matchId) { match = payload.new; render(); }
+  })
+  .subscribe();
+
+loadMatch();
+</script>
+</body>
+</html>
