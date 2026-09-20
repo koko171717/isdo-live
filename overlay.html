@@ -2,346 +2,128 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ISDO Live — Overlay Compact D</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ISDO Live — Referee Control</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{
-  --ink:#0d1520;
-  --ink2:#172330;
-  --cream:#f7f1e8;
-  --isdo-red:#ff304f;
-  --isdo-red-deep:#c91f39;
-  --half:#f0c95a;
-  --special:#e04762;
-  --gold:#e2bb48;
-}
-
-html,body{
-  margin:0;
-  width:100%;
-  height:100%;
-  overflow:hidden;
-  background:transparent!important;
-  font-family:Arial,Helvetica,sans-serif;
-}
-
-.stage{
-  position:relative;
-  width:100vw;
-  height:100vh;
-  background:transparent;
-}
-
-.wrap{
-  position:absolute;
-  top:13px;
-  left:13px;
-  width:347px;
-  max-width:calc(100vw - 26px);
-  filter:drop-shadow(0 3px 9px rgba(0,0,0,.27));
-}
-
-.event-tab{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  height:21px;
-  padding:0 11px;
-  margin-left:7px;
-  margin-bottom:-1px;
-  background:var(--isdo-red-deep);
-  color:#fff;
-  font-size:9px;
-  font-weight:900;
-  letter-spacing:.10em;
-  text-transform:uppercase;
-  border-radius:3px 3px 0 0;
-}
-
-.mainbar{
-  display:grid;
-  grid-template-columns:1fr 64px 1fr;
-  align-items:center;
-  min-height:35px;
-  background:var(--ink);
-  border-top:2px solid var(--isdo-red);
-  border-radius:4px;
-  overflow:hidden;
-}
-
-.team{
-  position:relative;
-  display:grid;
-  grid-template-columns:42px 1fr;
-  align-items:center;
-  min-width:0;
-  min-height:35px;
-  overflow:hidden;
-}
-
-.team.right{
-  grid-template-columns:1fr 42px;
-  text-align:right;
-}
-
-.logo-zone{
-  position:relative;
-  width:42px;
-  height:35px;
-  overflow:hidden;
-  background:
-    linear-gradient(135deg,rgba(255,48,79,.26),rgba(255,48,79,.04)),
-    #141f2b;
-}
-
-.team:not(.right) .logo-zone{
-  border-right:1px solid rgba(255,255,255,.08);
-}
-
-.team.right .logo-zone{
-  border-left:1px solid rgba(255,255,255,.08);
-}
-
-.logo-zone::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:linear-gradient(90deg,rgba(13,21,32,0) 55%,rgba(13,21,32,.65) 100%);
-}
-
-.team.right .logo-zone::after{
-  background:linear-gradient(270deg,rgba(13,21,32,0) 55%,rgba(13,21,32,.65) 100%);
-}
-
-.logo-art{
-  position:absolute;
-  width:47px;
-  height:47px;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-.logo-art img{
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  display:none;
-}
-
-.initial{
-  color:rgba(255,255,255,.88);
-  font-weight:900;
-  font-size:14px;
-}
-
-.team-name-wrap{
-  min-width:0;
-  padding:0 7px;
-}
-
-/* Team names intentionally larger than the rest of the compact UI */
-.name{
-  min-width:0;
-  font-size:11px;
-  line-height:1;
-  font-weight:900;
-  color:var(--cream);
-  text-transform:uppercase;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  letter-spacing:.005em;
-}
-
-.scorebox{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:5px;
-  height:35px;
-  background:var(--ink2);
-  border-left:1px solid rgba(255,255,255,.08);
-  border-right:1px solid rgba(255,255,255,.08);
-  box-shadow:inset 0 2px 0 rgba(255,48,79,.20);
-}
-
-.score{
-  color:#fff;
-  font-size:21px;
-  line-height:1;
-  font-weight:900;
-  font-variant-numeric:tabular-nums;
-}
-
-.hyphen{
-  color:rgba(255,255,255,.45);
-  font-size:11px;
-  font-weight:800;
-}
-
-.info{
-  width:165px;
-  margin:0 auto;
-  background:#eef1f4;
-  color:#12202d;
-  border-radius:0 0 4px 4px;
-  overflow:hidden;
-  border-top:2px solid var(--isdo-red);
-}
-
-.info-top{
-  height:14px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:#dfe5e9;
-  font-size:7px;
-  font-weight:900;
-  letter-spacing:.11em;
-  text-transform:uppercase;
-}
-
-.info-bottom{
-  display:grid;
-  grid-template-columns:1fr 1px 1fr;
-  align-items:center;
-  min-height:25px;
-}
-
-.clock{
-  text-align:center;
-  padding:3px 5px 3px;
-}
-
-.clock-time{
-  font-size:12px;
-  line-height:1;
-  font-weight:900;
-  font-variant-numeric:tabular-nums;
-}
-
-.clock-label{
-  margin-top:2px;
-  font-size:5px;
-  font-weight:800;
-  letter-spacing:.10em;
-  text-transform:uppercase;
-  opacity:.62;
-}
-
-.vline{
-  width:1px;
-  height:17px;
-  background:rgba(18,32,45,.18);
-}
-
-.single{
-  display:none;
-  grid-template-columns:1fr;
-  align-items:center;
-  min-height:25px;
-}
-
-.halftime .normal,
-.special90 .normal,
-.golden .normal{
-  display:none;
-}
-
-.halftime .single,
-.special90 .single,
-.golden .single{
-  display:grid;
-}
-
-.halftime .info,
-.special90 .info,
-.golden .info{
-  width:125px;
-}
-
-.halftime .info-top{
-  background:var(--half);
-  color:#1b1705;
-}
-
-.special90 .info-top{
-  background:var(--special);
-  color:#fff;
-}
-
-.golden .info-top{
-  background:var(--gold);
-  color:#241b00;
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#0c1117;color:#fff;min-height:100vh}
+.wrap{max-width:920px;margin:0 auto;padding:18px}
+h1{margin:0 0 14px;font-size:22px}
+.card{background:#151c24;border:1px solid #26303d;border-radius:16px;padding:16px;margin-bottom:14px}
+.teams{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.team{text-align:center}
+input,select{width:100%;background:#0e141b;color:#fff;border:1px solid #344252;border-radius:10px;padding:12px;font-size:16px}
+select{appearance:auto;font-weight:800}
+.team-label{font-size:11px;font-weight:900;letter-spacing:.10em;text-transform:uppercase;opacity:.68;margin-bottom:7px}
+.score{font-size:62px;font-weight:900;line-height:1;margin:14px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:16px;font-weight:800;cursor:pointer}
+.accent{background:#71e6c1;color:#102019}
+.ghost{background:#26303d;color:#fff}
+.danger{background:#ff6b6b;color:#171717}
+.warning{background:#ffd166;color:#231b00}
+.special{background:#58b7ff;color:#071725}
+.golden{background:#f1cb58;color:#241b00}
+.timer-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.timer{text-align:center}
+.label{opacity:.7;font-size:12px;text-transform:uppercase;letter-spacing:.09em}
+.time{font-size:50px;font-weight:900;margin:8px 0 12px;font-variant-numeric:tabular-nums}
+.half{text-align:center;font-size:23px;font-weight:900;margin-bottom:10px}
+.mode{text-align:center;margin:8px 0 14px;font-size:14px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.status{text-align:center;margin-top:10px;opacity:.72;font-size:13px}
+.hidden{display:none!important}
+@media(max-width:650px){
+  .teams,.timer-grid{grid-template-columns:1fr}
+  .score{font-size:54px}
+  .time{font-size:44px}
+  button{flex:1;min-width:120px}
 }
 </style>
 </head>
 <body>
-<div class="stage">
-  <div class="wrap" id="wrap">
-    <div class="event-tab">ISDO'27</div>
+<div class="wrap">
+<h1>ISDO Live — Referee Control</h1>
 
-    <div class="mainbar">
-      <div class="team">
-        <div class="logo-zone">
-          <div class="logo-art">
-            <img id="logoA" alt="">
-            <div class="initial" id="initialA">A</div>
-          </div>
-        </div>
-        <div class="team-name-wrap">
-          <div class="name" id="teamA">TEAM A</div>
-        </div>
-      </div>
-
-      <div class="scorebox">
-        <div class="score" id="scoreA">0</div>
-        <div class="hyphen">-</div>
-        <div class="score" id="scoreB">0</div>
-      </div>
-
-      <div class="team right">
-        <div class="team-name-wrap">
-          <div class="name" id="teamB">TEAM B</div>
-        </div>
-        <div class="logo-zone">
-          <div class="logo-art">
-            <img id="logoB" alt="">
-            <div class="initial" id="initialB">B</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="info">
-      <div class="info-top" id="state">FIRST HALF</div>
-
-      <div class="info-bottom normal">
-        <div class="clock">
-          <div class="clock-time" id="gameClock">15:00</div>
-          <div class="clock-label">Match</div>
-        </div>
-        <div class="vline"></div>
-        <div class="clock">
-          <div class="clock-time" id="setClock">03:00</div>
-          <div class="clock-label">Set</div>
-        </div>
-      </div>
-
-      <div class="single">
-        <div class="clock">
-          <div class="clock-time" id="singleClock">03:00</div>
-          <div class="clock-label" id="singleLabel">Half Time</div>
-        </div>
-      </div>
+<div class="card teams">
+  <div class="team">
+    <div class="team-label">Team A</div>
+    <select id="teamA" aria-label="Select Team A">
+      <option value="">Loading teams…</option>
+    </select>
+    <div class="score" id="scoreA">0</div>
+    <div class="row">
+      <button class="ghost" onclick="changeScore('a',-1)">−</button>
+      <button class="accent" onclick="changeScore('a',1)">+</button>
     </div>
   </div>
+
+  <div class="team">
+    <div class="team-label">Team B</div>
+    <select id="teamB" aria-label="Select Team B">
+      <option value="">Loading teams…</option>
+    </select>
+    <div class="score" id="scoreB">0</div>
+    <div class="row">
+      <button class="ghost" onclick="changeScore('b',-1)">−</button>
+      <button class="accent" onclick="changeScore('b',1)">+</button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="half" id="halfText">FIRST HALF</div>
+  <div class="mode" id="modeText">NORMAL PLAY</div>
+
+  <div class="row" id="gameControls">
+    <button class="accent" id="gameBtn" onclick="toggleGame()">START GAME</button>
+    <button class="warning" id="halfTimeBtn" onclick="startHalfTime()">HALF TIME</button>
+  </div>
+
+  <div class="row" style="margin-top:10px">
+    <button class="special" id="special90Btn" onclick="activateSpecial90()">1:30 SET</button>
+    <button class="golden hidden" id="goldenBtn" onclick="activateGoldenSet()">GOLDEN SET 3:00</button>
+  </div>
+
+  <div class="row hidden" id="halfControls" style="margin-top:10px">
+    <button class="accent" id="halfToggleBtn" onclick="toggleHalfTimeClock()">PAUSE HALF TIME</button>
+    <button class="ghost" onclick="resetHalfTime()">RESET 3:00</button>
+    <button class="warning" onclick="prepareSecondHalf()">PREPARE SECOND HALF</button>
+  </div>
+</div>
+
+<div class="card timer-grid">
+  <div class="timer" id="gameClockCard">
+    <div class="label">Match Clock</div>
+    <div class="time" id="gameTime">15:00</div>
+    <div class="row">
+      <button class="ghost" onclick="resetGame()">RESET 15:00</button>
+    </div>
+  </div>
+
+  <div class="timer" id="setClockCard">
+    <div class="label" id="setLabel">Set Clock</div>
+    <div class="time" id="setTime">03:00</div>
+    <div class="row">
+      <button class="accent" id="setBtn" onclick="toggleSet()">START SET</button>
+      <button class="ghost" id="setResetBtn" onclick="resetSet()">RESET 3:00</button>
+    </div>
+  </div>
+</div>
+
+<div class="card hidden" id="halfClockCard">
+  <div class="timer">
+    <div class="label">Half Time</div>
+    <div class="time" id="halfTime">03:00</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="row">
+    <button class="danger" onclick="resetAll()">NEW MATCH / RESET</button>
+  </div>
+  <div class="status" id="status">Connecting…</div>
+</div>
 </div>
 
 <script>
@@ -349,78 +131,147 @@ const SUPABASE_URL="https://orqvmsttedmtenvrwfzk.supabase.co";
 const SUPABASE_KEY="sb_publishable_Nfs8j9E7aiQea5VHC_hD-Q_tHm7nWv3";
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-let match=null,matchId=null;
+let match=null,matchId=null,ticking=false;
+let teams=[];
 
 function fmt(sec){
   sec=Math.max(0,Number(sec||0));
   const m=Math.floor(sec/60),s=sec%60;
   return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
 }
+function mode(){ return match?.play_mode||'normal'; }
+function setStatus(t){ document.getElementById('status').textContent=t; }
 
-function firstLetter(name,fallback){
-  const n=(name||'').trim();
-  return n?n[0].toUpperCase():fallback;
+function populateTeamSelects(){
+  const selects=[
+    {el:document.getElementById('teamA'), selected:match?.team_a_id},
+    {el:document.getElementById('teamB'), selected:match?.team_b_id}
+  ];
+
+  for(const item of selects){
+    const el=item.el;
+    const current=String(item.selected??'');
+    el.innerHTML='<option value="">SELECT TEAM</option>';
+
+    for(const team of teams){
+      const opt=document.createElement('option');
+      opt.value=team.id;
+      opt.textContent=team.name;
+      if(String(team.id)===current) opt.selected=true;
+      el.appendChild(opt);
+    }
+  }
 }
 
-function setLogo(imgId,initialId,url,letter){
-  const img=document.getElementById(imgId);
-  const ini=document.getElementById(initialId);
+async function loadTeams(){
+  const {data,error}=await db
+    .from('teams')
+    .select('id,name,short_name,logo_url')
+    .order('name',{ascending:true});
 
-  if(url && String(url).startsWith('http')){
-    img.src=url;
-    img.style.display='block';
-    ini.style.display='none';
-    img.onerror=()=>{
-      img.style.display='none';
-      ini.style.display='block';
-      ini.textContent=letter;
-    };
-  }else{
-    img.style.display='none';
-    ini.style.display='block';
-    ini.textContent=letter;
+  if(error){
+    setStatus('Teams error: '+error.message);
+    return;
   }
+
+  teams=data||[];
+  populateTeamSelects();
+}
+
+async function selectTeam(side,teamId){
+  if(!teamId)return;
+
+  const team=teams.find(t=>String(t.id)===String(teamId));
+  if(!team)return;
+
+  const fields=side==='a'
+    ? {
+        team_a_id:team.id,
+        team_a_name:(team.short_name||team.name).toUpperCase(),
+        team_a_logo:team.logo_url||null
+      }
+    : {
+        team_b_id:team.id,
+        team_b_name:(team.short_name||team.name).toUpperCase(),
+        team_b_logo:team.logo_url||null
+      };
+
+  await patch(fields);
 }
 
 function render(){
   if(!match)return;
 
-  const a=(match.team_a_name||'TEAM A').toUpperCase();
-  const b=(match.team_b_name||'TEAM B').toUpperCase();
-  const m=match.play_mode||'normal';
+  const m=mode();
+  const firstHalf=Number(match.half_number)!==2;
+  const secondHalf=!firstHalf;
+  const isHalf=m==='halftime';
+  const is90=m==='special90';
+  const isGolden=m==='golden';
+  const isNormal=m==='normal';
 
-  document.getElementById('teamA').textContent=a;
-  document.getElementById('teamB').textContent=b;
+  if(teams.length){
+    document.getElementById('teamA').value=match.team_a_id?String(match.team_a_id):'';
+    document.getElementById('teamB').value=match.team_b_id?String(match.team_b_id):'';
+  }
   document.getElementById('scoreA').textContent=match.score_a??0;
   document.getElementById('scoreB').textContent=match.score_b??0;
-  document.getElementById('gameClock').textContent=fmt(match.game_seconds);
-  document.getElementById('setClock').textContent=fmt(match.set_seconds);
+  document.getElementById('gameTime').textContent=fmt(match.game_seconds);
+  document.getElementById('setTime').textContent=fmt(match.set_seconds);
+  document.getElementById('halfTime').textContent=fmt(match.halftime_seconds);
 
-  const wrap=document.getElementById('wrap');
-  wrap.classList.remove('halftime','special90','golden');
+  document.getElementById('halfText').textContent=secondHalf?'SECOND HALF':'FIRST HALF';
+  document.getElementById('modeText').textContent=
+    isHalf?'HALF TIME':is90?'1:30 SET':isGolden?'GOLDEN SET':'NORMAL PLAY';
 
-  if(m==='halftime'){
-    wrap.classList.add('halftime');
-    document.getElementById('state').textContent='HALF TIME';
-    document.getElementById('singleClock').textContent=fmt(match.halftime_seconds);
-    document.getElementById('singleLabel').textContent='Half Time';
-  }else if(m==='special90'){
-    wrap.classList.add('special90');
-    document.getElementById('state').textContent='1:30 SET';
-    document.getElementById('singleClock').textContent=fmt(match.set_seconds);
-    document.getElementById('singleLabel').textContent='Set';
-  }else if(m==='golden'){
-    wrap.classList.add('golden');
-    document.getElementById('state').textContent='GOLDEN SET';
-    document.getElementById('singleClock').textContent=fmt(match.set_seconds);
-    document.getElementById('singleLabel').textContent='Golden Set';
-  }else{
-    document.getElementById('state').textContent=
-      Number(match.half_number)===2?'SECOND HALF':'FIRST HALF';
+  document.getElementById('gameBtn').textContent=match.game_running?'PAUSE GAME':'START GAME';
+  document.getElementById('gameBtn').className=match.game_running?'danger':'accent';
+  document.getElementById('setBtn').textContent=match.set_running?'PAUSE SET':'START SET';
+
+  // Game button only exists in NORMAL PLAY.
+  document.getElementById('gameBtn').classList.toggle('hidden',!isNormal);
+
+  // HALF TIME remains available through the 1:30 SET in FIRST HALF.
+  // It is never available in SECOND HALF, GOLDEN SET, or while already at half time.
+  const showHalfTimeButton=firstHalf && !isHalf && !isGolden;
+  document.getElementById('halfTimeBtn').classList.toggle('hidden',!showHalfTimeButton);
+
+  // Hide the row only when neither START GAME nor HALF TIME is available.
+  document.getElementById('gameControls').classList.toggle(
+    'hidden',
+    !isNormal && !showHalfTimeButton
+  );
+
+  document.getElementById('goldenBtn').classList.toggle('hidden',!secondHalf || isHalf);
+  document.getElementById('special90Btn').classList.toggle('hidden',isHalf);
+
+  document.getElementById('halfControls').classList.toggle('hidden',!isHalf);
+  document.getElementById('halfClockCard').classList.toggle('hidden',!isHalf);
+  document.getElementById('gameClockCard').classList.toggle('hidden',isHalf || is90 || isGolden);
+  document.getElementById('setClockCard').classList.toggle('hidden',isHalf);
+
+  document.getElementById('setLabel').textContent=is90?'1:30 Set':isGolden?'Golden Set':'Set Clock';
+  document.getElementById('setResetBtn').textContent=is90?'RESET 1:30':'RESET 3:00';
+  document.getElementById('halfToggleBtn').textContent=
+    match.halftime_running?'PAUSE HALF TIME':'RESUME HALF TIME';
+}
+
+async function patch(fields){
+  if(!matchId)return;
+  const {data,error}=await db
+    .from('matches')
+    .update({...fields,updated_at:new Date().toISOString()})
+    .eq('id',matchId)
+    .select()
+    .single();
+
+  if(error){
+    setStatus('Error: '+error.message);
+    return;
   }
-
-  setLogo('logoA','initialA',match.team_a_logo,firstLetter(a,'A'));
-  setLogo('logoB','initialB',match.team_b_logo,firstLetter(b,'B'));
+  match=data;
+  render();
+  setStatus('Synced');
 }
 
 async function loadMatch(){
@@ -429,27 +280,183 @@ async function loadMatch(){
     .select('*')
     .order('id',{ascending:true})
     .limit(1)
-    .maybeSingle();
+    .single();
 
-  if(!error && data){
-    match=data;
-    matchId=data.id;
-    render();
+  if(error){
+    setStatus('Read error: '+error.message);
+    return;
   }
+
+  match=data;
+  matchId=data.id;
+  await loadTeams();
+  render();
+  setStatus('Connected');
 }
 
-db.channel('matches-overlay-compact-d')
-  .on('postgres_changes',{event:'*',schema:'public',table:'matches'},payload=>{
-    if(payload.new && (!matchId || payload.new.id===matchId)){
+async function changeScore(side,delta){
+  const key=side==='a'?'score_a':'score_b';
+  await patch({[key]:Math.max(0,Number(match[key]||0)+delta)});
+}
+
+async function toggleGame(){
+  if(mode()!=='normal')return;
+  const start=!match.game_running;
+  await patch({
+    game_running:start,
+    set_running:start && Number(match.set_seconds||0)>0
+  });
+}
+
+async function toggleSet(){
+  if(mode()==='halftime')return;
+  await patch({set_running:!match.set_running});
+}
+
+async function resetGame(){
+  if(mode()!=='normal')return;
+  await patch({game_seconds:900,game_running:false});
+}
+
+async function resetSet(){
+  if(mode()==='halftime')return;
+  const seconds=mode()==='special90'?90:180;
+  await patch({set_seconds:seconds,set_running:false});
+}
+
+async function activateSpecial90(){
+  await patch({
+    play_mode:'special90',
+    game_running:false,
+    set_seconds:90,
+    set_running:false,
+    is_halftime:false,
+    halftime_running:false
+  });
+}
+
+async function activateGoldenSet(){
+  if(Number(match.half_number)!==2)return;
+  await patch({
+    play_mode:'golden',
+    game_running:false,
+    set_seconds:180,
+    set_running:false,
+    is_halftime:false,
+    halftime_running:false
+  });
+}
+
+async function startHalfTime(){
+  // Allowed from NORMAL PLAY or 1:30 SET, but FIRST HALF only.
+  if(Number(match.half_number)===2)return;
+
+  if(!confirm('Switch to HALF TIME?'))return;
+
+  await patch({
+    play_mode:'halftime',
+    is_halftime:true,
+    halftime_seconds:180,
+    halftime_running:true,
+    game_running:false,
+    set_running:false
+  });
+}
+
+async function toggleHalfTimeClock(){
+  if(mode()!=='halftime')return;
+  await patch({halftime_running:!match.halftime_running});
+}
+
+async function resetHalfTime(){
+  if(mode()!=='halftime')return;
+  await patch({halftime_seconds:180,halftime_running:false});
+}
+
+async function prepareSecondHalf(){
+  if(!confirm('Prepare SECOND HALF?'))return;
+
+  await patch({
+    half_number:2,
+    play_mode:'normal',
+    is_halftime:false,
+    halftime_seconds:180,
+    halftime_running:false,
+    game_seconds:900,
+    game_running:false,
+    set_seconds:180,
+    set_running:false
+  });
+}
+
+async function resetAll(){
+  if(!confirm('Reset scores, clocks and return to FIRST HALF?'))return;
+
+  await patch({
+    score_a:0,
+    score_b:0,
+    half_number:1,
+    play_mode:'normal',
+    is_halftime:false,
+    halftime_seconds:180,
+    halftime_running:false,
+    game_seconds:900,
+    game_running:false,
+    set_seconds:180,
+    set_running:false
+  });
+}
+
+document.getElementById('teamA').addEventListener('change',e=>
+  selectTeam('a',e.target.value)
+);
+document.getElementById('teamB').addEventListener('change',e=>
+  selectTeam('b',e.target.value)
+);
+
+setInterval(async()=>{
+  if(!match||ticking)return;
+
+  const updates={};
+  const m=mode();
+
+  if(m==='halftime'){
+    if(match.halftime_running && match.halftime_seconds>0)
+      updates.halftime_seconds=match.halftime_seconds-1;
+
+    if(match.halftime_running && match.halftime_seconds<=1)
+      updates.halftime_running=false;
+  }else{
+    if(m==='normal' && match.game_running && match.game_seconds>0)
+      updates.game_seconds=match.game_seconds-1;
+
+    if(m==='normal' && match.game_running && match.game_seconds<=1)
+      updates.game_running=false;
+
+    if(match.set_running && match.set_seconds>0)
+      updates.set_seconds=match.set_seconds-1;
+
+    if(match.set_running && match.set_seconds<=1)
+      updates.set_running=false;
+  }
+
+  if(!Object.keys(updates).length)return;
+
+  ticking=true;
+  await patch(updates);
+  ticking=false;
+},1000);
+
+db.channel('matches-control-team-select-v2')
+  .on('postgres_changes',{event:'UPDATE',schema:'public',table:'matches'},payload=>{
+    if(matchId && payload.new.id===matchId){
       match=payload.new;
-      matchId=payload.new.id;
       render();
     }
   })
   .subscribe();
 
 loadMatch();
-setInterval(loadMatch,5000);
 </script>
 </body>
 </html>
