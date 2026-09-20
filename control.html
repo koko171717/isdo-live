@@ -148,6 +148,26 @@ function fmt(sec){
   const m=Math.floor(sec/60),s=sec%60;
   return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
 }
+
+function remainingSeconds(storedSeconds,running,endsAt){
+  if(!running) return Math.max(0,Number(storedSeconds||0));
+  if(!endsAt) return Math.max(0,Number(storedSeconds||0));
+  return Math.max(0,Math.ceil((new Date(endsAt).getTime()-Date.now())/1000));
+}
+
+function isoAfter(seconds){
+  return new Date(Date.now()+Math.max(0,Number(seconds||0))*1000).toISOString();
+}
+
+function gameRemaining(){
+  return remainingSeconds(match?.game_seconds,match?.game_running,match?.game_ends_at);
+}
+function setRemaining(){
+  return remainingSeconds(match?.set_seconds,match?.set_running,match?.set_ends_at);
+}
+function halftimeRemaining(){
+  return remainingSeconds(match?.halftime_seconds,match?.halftime_running,match?.halftime_ends_at);
+}
 function mode(){ return match?.play_mode||'normal'; }
 function setStatus(t){ document.getElementById('status').textContent=t; }
 
@@ -228,9 +248,9 @@ function render(){
   if(categorySelect) categorySelect.value=match.category||'MEN';
   document.getElementById('scoreA').textContent=match.score_a??0;
   document.getElementById('scoreB').textContent=match.score_b??0;
-  document.getElementById('gameTime').textContent=fmt(match.game_seconds);
-  document.getElementById('setTime').textContent=fmt(match.set_seconds);
-  document.getElementById('halfTime').textContent=fmt(match.halftime_seconds);
+  document.getElementById('gameTime').textContent=fmt(gameRemaining());
+  document.getElementById('setTime').textContent=fmt(setRemaining());
+  document.getElementById('halfTime').textContent=fmt(halftimeRemaining());
 
   document.getElementById('halfText').textContent=secondHalf?'SECOND HALF':'FIRST HALF';
   document.getElementById('modeText').textContent=
@@ -313,37 +333,78 @@ async function changeScore(side,delta){
 
 async function toggleGame(){
   if(mode()!=='normal')return;
-  const start=!match.game_running;
+
+  if(match.game_running){
+    await patch({
+      game_seconds:gameRemaining(),
+      game_running:false,
+      game_ends_at:null,
+      set_seconds:setRemaining(),
+      set_running:false,
+      set_ends_at:null
+    });
+    return;
+  }
+
+  const g=gameRemaining();
+  const s=setRemaining();
+
   await patch({
-    game_running:start,
-    set_running:start && Number(match.set_seconds||0)>0
+    game_running:g>0,
+    game_ends_at:g>0?isoAfter(g):null,
+    set_running:s>0,
+    set_ends_at:s>0?isoAfter(s):null
   });
 }
 
 async function toggleSet(){
   if(mode()==='halftime')return;
-  await patch({set_running:!match.set_running});
+
+  if(match.set_running){
+    await patch({
+      set_seconds:setRemaining(),
+      set_running:false,
+      set_ends_at:null
+    });
+  }else{
+    const s=setRemaining();
+    await patch({
+      set_running:s>0,
+      set_ends_at:s>0?isoAfter(s):null
+    });
+  }
 }
 
 async function resetGame(){
   if(mode()!=='normal')return;
-  await patch({game_seconds:900,game_running:false});
+  await patch({
+    game_seconds:900,
+    game_running:false,
+    game_ends_at:null
+  });
 }
 
 async function resetSet(){
   if(mode()==='halftime')return;
   const seconds=mode()==='special90'?90:180;
-  await patch({set_seconds:seconds,set_running:false});
+  await patch({
+    set_seconds:seconds,
+    set_running:false,
+    set_ends_at:null
+  });
 }
 
 async function activateSpecial90(){
   await patch({
     play_mode:'special90',
     game_running:false,
+    game_ends_at:null,
     set_seconds:90,
     set_running:false,
+    set_ends_at:null,
     is_halftime:false,
-    halftime_running:false
+    halftime_running:false,
+    halftime_ends_at:null
   });
 }
 
@@ -352,17 +413,18 @@ async function activateGoldenSet(){
   await patch({
     play_mode:'golden',
     game_running:false,
+    game_ends_at:null,
     set_seconds:180,
     set_running:false,
+    set_ends_at:null,
     is_halftime:false,
-    halftime_running:false
+    halftime_running:false,
+    halftime_ends_at:null
   });
 }
 
 async function startHalfTime(){
-  // Allowed from NORMAL PLAY or 1:30 SET, but FIRST HALF only.
   if(Number(match.half_number)===2)return;
-
   if(!confirm('Switch to HALF TIME?'))return;
 
   await patch({
@@ -370,19 +432,41 @@ async function startHalfTime(){
     is_halftime:true,
     halftime_seconds:180,
     halftime_running:true,
+    halftime_ends_at:isoAfter(180),
+    game_seconds:gameRemaining(),
     game_running:false,
-    set_running:false
+    game_ends_at:null,
+    set_seconds:setRemaining(),
+    set_running:false,
+    set_ends_at:null
   });
 }
 
 async function toggleHalfTimeClock(){
   if(mode()!=='halftime')return;
-  await patch({halftime_running:!match.halftime_running});
+
+  if(match.halftime_running){
+    await patch({
+      halftime_seconds:halftimeRemaining(),
+      halftime_running:false,
+      halftime_ends_at:null
+    });
+  }else{
+    const h=halftimeRemaining();
+    await patch({
+      halftime_running:h>0,
+      halftime_ends_at:h>0?isoAfter(h):null
+    });
+  }
 }
 
 async function resetHalfTime(){
   if(mode()!=='halftime')return;
-  await patch({halftime_seconds:180,halftime_running:false});
+  await patch({
+    halftime_seconds:180,
+    halftime_running:false,
+    halftime_ends_at:null
+  });
 }
 
 async function prepareSecondHalf(){
@@ -394,10 +478,13 @@ async function prepareSecondHalf(){
     is_halftime:false,
     halftime_seconds:180,
     halftime_running:false,
+    halftime_ends_at:null,
     game_seconds:900,
     game_running:false,
+    game_ends_at:null,
     set_seconds:180,
-    set_running:false
+    set_running:false,
+    set_ends_at:null
   });
 }
 
@@ -412,10 +499,13 @@ async function resetAll(){
     is_halftime:false,
     halftime_seconds:180,
     halftime_running:false,
+    halftime_ends_at:null,
     game_seconds:900,
     game_running:false,
+    game_ends_at:null,
     set_seconds:180,
-    set_running:false
+    set_running:false,
+    set_ends_at:null
   });
 }
 
@@ -433,40 +523,44 @@ if(categorySelect){
   );
 }
 
-setInterval(async()=>{
-  if(!match||ticking)return;
+let expirySync=false;
+
+setInterval(()=>{
+  if(!match)return;
+  render();
+
+  if(expirySync)return;
 
   const updates={};
   const m=mode();
 
-  if(m==='halftime'){
-    if(match.halftime_running && match.halftime_seconds>0)
-      updates.halftime_seconds=match.halftime_seconds-1;
-
-    if(match.halftime_running && match.halftime_seconds<=1)
-      updates.halftime_running=false;
-  }else{
-    if(m==='normal' && match.game_running && match.game_seconds>0)
-      updates.game_seconds=match.game_seconds-1;
-
-    if(m==='normal' && match.game_running && match.game_seconds<=1)
-      updates.game_running=false;
-
-    if(match.set_running && match.set_seconds>0)
-      updates.set_seconds=match.set_seconds-1;
-
-    if(match.set_running && match.set_seconds<=1)
-      updates.set_running=false;
+  if(m==='halftime' && match.halftime_running && halftimeRemaining()<=0){
+    updates.halftime_seconds=0;
+    updates.halftime_running=false;
+    updates.halftime_ends_at=null;
   }
 
-  if(!Object.keys(updates).length)return;
+  if(m!=='halftime'){
+    if(m==='normal' && match.game_running && gameRemaining()<=0){
+      updates.game_seconds=0;
+      updates.game_running=false;
+      updates.game_ends_at=null;
+    }
 
-  ticking=true;
-  await patch(updates);
-  ticking=false;
-},1000);
+    if(match.set_running && setRemaining()<=0){
+      updates.set_seconds=0;
+      updates.set_running=false;
+      updates.set_ends_at=null;
+    }
+  }
 
-db.channel('matches-control-category-v3')
+  if(Object.keys(updates).length){
+    expirySync=true;
+    patch(updates).finally(()=>expirySync=false);
+  }
+},200);
+
+db.channel('matches-control-accurate-timers-v4')
   .on('postgres_changes',{event:'UPDATE',schema:'public',table:'matches'},payload=>{
     if(matchId && payload.new.id===matchId){
       match=payload.new;
