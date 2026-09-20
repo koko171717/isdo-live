@@ -13,7 +13,9 @@ h1{margin:0 0 14px;font-size:22px}
 .card{background:#151c24;border:1px solid #26303d;border-radius:16px;padding:16px;margin-bottom:14px}
 .teams{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .team{text-align:center}
-input{width:100%;background:#0e141b;color:#fff;border:1px solid #344252;border-radius:10px;padding:12px;font-size:16px}
+input,select{width:100%;background:#0e141b;color:#fff;border:1px solid #344252;border-radius:10px;padding:12px;font-size:16px}
+select{appearance:auto;font-weight:800}
+.team-label{font-size:11px;font-weight:900;letter-spacing:.10em;text-transform:uppercase;opacity:.68;margin-bottom:7px}
 .score{font-size:62px;font-weight:900;line-height:1;margin:14px 0}
 .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:16px;font-weight:800;cursor:pointer}
@@ -45,7 +47,10 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
 
 <div class="card teams">
   <div class="team">
-    <input id="teamA" value="Team A" aria-label="Team A name">
+    <div class="team-label">Team A</div>
+    <select id="teamA" aria-label="Select Team A">
+      <option value="">Loading teams…</option>
+    </select>
     <div class="score" id="scoreA">0</div>
     <div class="row">
       <button class="ghost" onclick="changeScore('a',-1)">−</button>
@@ -54,7 +59,10 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
   </div>
 
   <div class="team">
-    <input id="teamB" value="Team B" aria-label="Team B name">
+    <div class="team-label">Team B</div>
+    <select id="teamB" aria-label="Select Team B">
+      <option value="">Loading teams…</option>
+    </select>
     <div class="score" id="scoreB">0</div>
     <div class="row">
       <button class="ghost" onclick="changeScore('b',-1)">−</button>
@@ -124,6 +132,7 @@ const SUPABASE_KEY="sb_publishable_Nfs8j9E7aiQea5VHC_hD-Q_tHm7nWv3";
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let match=null,matchId=null,ticking=false;
+let teams=[];
 
 function fmt(sec){
   sec=Math.max(0,Number(sec||0));
@@ -132,6 +141,63 @@ function fmt(sec){
 }
 function mode(){ return match?.play_mode||'normal'; }
 function setStatus(t){ document.getElementById('status').textContent=t; }
+
+function populateTeamSelects(){
+  const selects=[
+    {el:document.getElementById('teamA'), selected:match?.team_a_id},
+    {el:document.getElementById('teamB'), selected:match?.team_b_id}
+  ];
+
+  for(const item of selects){
+    const el=item.el;
+    const current=String(item.selected??'');
+    el.innerHTML='<option value="">SELECT TEAM</option>';
+
+    for(const team of teams){
+      const opt=document.createElement('option');
+      opt.value=team.id;
+      opt.textContent=team.name;
+      if(String(team.id)===current) opt.selected=true;
+      el.appendChild(opt);
+    }
+  }
+}
+
+async function loadTeams(){
+  const {data,error}=await db
+    .from('teams')
+    .select('id,name,short_name,logo_url')
+    .order('name',{ascending:true});
+
+  if(error){
+    setStatus('Teams error: '+error.message);
+    return;
+  }
+
+  teams=data||[];
+  populateTeamSelects();
+}
+
+async function selectTeam(side,teamId){
+  if(!teamId)return;
+
+  const team=teams.find(t=>String(t.id)===String(teamId));
+  if(!team)return;
+
+  const fields=side==='a'
+    ? {
+        team_a_id:team.id,
+        team_a_name:(team.short_name||team.name).toUpperCase(),
+        team_a_logo:team.logo_url||null
+      }
+    : {
+        team_b_id:team.id,
+        team_b_name:(team.short_name||team.name).toUpperCase(),
+        team_b_logo:team.logo_url||null
+      };
+
+  await patch(fields);
+}
 
 function render(){
   if(!match)return;
@@ -144,8 +210,10 @@ function render(){
   const isGolden=m==='golden';
   const isNormal=m==='normal';
 
-  document.getElementById('teamA').value=match.team_a_name??'Team A';
-  document.getElementById('teamB').value=match.team_b_name??'Team B';
+  if(teams.length){
+    document.getElementById('teamA').value=match.team_a_id?String(match.team_a_id):'';
+    document.getElementById('teamB').value=match.team_b_id?String(match.team_b_id):'';
+  }
   document.getElementById('scoreA').textContent=match.score_a??0;
   document.getElementById('scoreB').textContent=match.score_b??0;
   document.getElementById('gameTime').textContent=fmt(match.game_seconds);
@@ -221,6 +289,7 @@ async function loadMatch(){
 
   match=data;
   matchId=data.id;
+  await loadTeams();
   render();
   setStatus('Connected');
 }
@@ -339,10 +408,10 @@ async function resetAll(){
 }
 
 document.getElementById('teamA').addEventListener('change',e=>
-  patch({team_a_name:e.target.value.trim()||'Team A'})
+  selectTeam('a',e.target.value)
 );
 document.getElementById('teamB').addEventListener('change',e=>
-  patch({team_b_name:e.target.value.trim()||'Team B'})
+  selectTeam('b',e.target.value)
 );
 
 setInterval(async()=>{
@@ -378,7 +447,7 @@ setInterval(async()=>{
   ticking=false;
 },1000);
 
-db.channel('matches-control-final-v1-1')
+db.channel('matches-control-team-select-v2')
   .on('postgres_changes',{event:'UPDATE',schema:'public',table:'matches'},payload=>{
     if(matchId && payload.new.id===matchId){
       match=payload.new;
