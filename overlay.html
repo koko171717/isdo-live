@@ -1,74 +1,492 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ISDO Live — Overlay Final</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ISDO Live — Overlay Refine B</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--ink:#0c1622;--ink2:#142333;--cream:#f5f1e8;--accent:#27c7be;--half:#f0c95a;--special:#58b7ff;--gold:#f1cb58}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent!important;font-family:Arial,Helvetica,sans-serif}
-.stage{position:relative;width:100vw;height:100vh;background:transparent}
-.wrap{position:absolute;top:18px;left:18px;width:520px;max-width:calc(100vw - 36px);filter:drop-shadow(0 5px 14px rgba(0,0,0,.28))}
-.event-tab{display:inline-flex;align-items:center;justify-content:center;height:22px;padding:0 12px;margin-left:12px;margin-bottom:-1px;background:var(--accent);color:#07221f;font-size:10px;font-weight:900;letter-spacing:.11em;text-transform:uppercase;border-radius:3px 3px 0 0}
-.mainbar{display:grid;grid-template-columns:1fr 96px 1fr;align-items:center;min-height:52px;background:var(--ink);border-top:3px solid var(--accent);border-radius:4px;overflow:hidden}
-.team{display:flex;align-items:center;gap:8px;min-width:0;padding:0 10px}.team.right{justify-content:flex-end;text-align:right}
-.logo{width:30px;height:30px;background:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;overflow:hidden}.logo img{width:100%;height:100%;object-fit:contain;display:none}
-.initial{color:var(--ink);font-weight:900;font-size:11px}.name{min-width:0;font-size:14px;font-weight:800;color:var(--cream);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.scorebox{display:flex;align-items:center;justify-content:center;gap:7px;height:52px;background:var(--ink2);border-left:1px solid rgba(255,255,255,.08);border-right:1px solid rgba(255,255,255,.08)}
-.score{color:#fff;font-size:30px;line-height:1;font-weight:900;font-variant-numeric:tabular-nums}.hyphen{color:rgba(255,255,255,.5);font-size:16px;font-weight:800}
-.info{width:255px;margin:0 auto;background:#eef2f5;color:#12202d;border-radius:0 0 4px 4px;overflow:hidden;border-top:2px solid var(--accent)}
-.info-top{height:20px;display:flex;align-items:center;justify-content:center;background:#dfe8ec;font-size:9px;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
-.info-bottom{display:grid;grid-template-columns:1fr 1px 1fr;align-items:center;min-height:35px}.clock{text-align:center;padding:4px 8px 5px}
-.clock-time{font-size:17px;line-height:1;font-weight:900;font-variant-numeric:tabular-nums}.clock-label{margin-top:3px;font-size:7px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;opacity:.62}
-.vline{width:1px;height:24px;background:rgba(18,32,45,.18)}.single{display:none;grid-template-columns:1fr;align-items:center;min-height:35px}
-.halftime .normal,.special90 .normal,.golden .normal{display:none}.halftime .single,.special90 .single,.golden .single{display:grid}
-.halftime .info,.special90 .info,.golden .info{width:190px}
-.halftime .info-top{background:var(--half);color:#1b1705}.special90 .info-top{background:var(--special);color:#071725}.golden .info-top{background:var(--gold);color:#241b00}
-@media(max-width:600px){.wrap{width:480px}.name{font-size:12px}.score{font-size:27px}.info{width:235px}}
+:root{
+  --ink:#0d1520;
+  --ink2:#172330;
+  --cream:#f7f1e8;
+
+  /* ISDO electric red direction */
+  --isdo-red:#ff304f;
+  --isdo-red-deep:#c91f39;
+  --isdo-red-soft:#ff5f73;
+
+  --half:#f0c95a;
+  --special:#e04762;
+  --gold:#e2bb48;
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:transparent!important;
+  font-family:Arial,Helvetica,sans-serif;
+}
+
+.stage{
+  position:relative;
+  width:100vw;
+  height:100vh;
+  background:transparent;
+}
+
+.wrap{
+  position:absolute;
+  top:16px;
+  left:16px;
+  width:490px;
+  max-width:calc(100vw - 32px);
+  filter:drop-shadow(0 5px 13px rgba(0,0,0,.28));
+}
+
+.event-tab{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  height:27px;
+  padding:0 16px;
+  margin-left:9px;
+  margin-bottom:-1px;
+  background:var(--isdo-red-deep);
+  color:#fff;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.10em;
+  text-transform:uppercase;
+  border-radius:3px 3px 0 0;
+}
+
+/* Main banner structure remains unchanged */
+.mainbar{
+  display:grid;
+  grid-template-columns:1fr 90px 1fr;
+  align-items:center;
+  min-height:49px;
+  background:var(--ink);
+  border-top:3px solid var(--isdo-red);
+  border-radius:4px;
+  overflow:hidden;
+}
+
+/* Each team side is now treated as one integrated graphic strip */
+.team{
+  position:relative;
+  display:grid;
+  grid-template-columns:58px 1fr;
+  align-items:center;
+  min-width:0;
+  min-height:49px;
+  overflow:hidden;
+}
+
+.team.right{
+  grid-template-columns:1fr 58px;
+  text-align:right;
+}
+
+/* Logo artwork zone:
+   larger, cropped, integrated into the end of the banner */
+.logo-zone{
+  position:relative;
+  width:58px;
+  height:49px;
+  overflow:hidden;
+  background:
+    linear-gradient(135deg,rgba(255,48,79,.32),rgba(255,48,79,.06)),
+    #141f2b;
+}
+
+.team:not(.right) .logo-zone{
+  border-right:1px solid rgba(255,255,255,.08);
+}
+
+.team.right .logo-zone{
+  border-left:1px solid rgba(255,255,255,.08);
+}
+
+.logo-zone::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(
+    90deg,
+    rgba(13,21,32,0) 52%,
+    rgba(13,21,32,.70) 100%
+  );
+}
+
+.team.right .logo-zone::after{
+  background:linear-gradient(
+    270deg,
+    rgba(13,21,32,0) 52%,
+    rgba(13,21,32,.70) 100%
+  );
+}
+
+.logo-art{
+  position:absolute;
+  width:64px;
+  height:64px;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.logo-art img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:none;
+}
+
+/* With no logo yet, show a subtle initial rather than a white placeholder */
+.initial{
+  color:rgba(255,255,255,.88);
+  font-weight:900;
+  font-size:20px;
+  letter-spacing:.02em;
+}
+
+.team-name-wrap{
+  min-width:0;
+  padding:0 10px;
+}
+
+.team.right .team-name-wrap{
+  padding:0 10px;
+}
+
+.name{
+  min-width:0;
+  font-size:13px;
+  font-weight:800;
+  color:var(--cream);
+  text-transform:uppercase;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  letter-spacing:.015em;
+}
+
+.scorebox{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  height:49px;
+  background:var(--ink2);
+  border-left:1px solid rgba(255,255,255,.08);
+  border-right:1px solid rgba(255,255,255,.08);
+  box-shadow:inset 0 3px 0 rgba(255,48,79,.20);
+}
+
+.score{
+  color:#fff;
+  font-size:29px;
+  line-height:1;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+}
+
+.hyphen{
+  color:rgba(255,255,255,.45);
+  font-size:15px;
+  font-weight:800;
+}
+
+/* Timing panel unchanged structurally */
+.info{
+  width:236px;
+  margin:0 auto;
+  background:#eef1f4;
+  color:#12202d;
+  border-radius:0 0 4px 4px;
+  overflow:hidden;
+  border-top:2px solid var(--isdo-red);
+}
+
+.info-top{
+  height:19px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#dfe5e9;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+
+.info-bottom{
+  display:grid;
+  grid-template-columns:1fr 1px 1fr;
+  align-items:center;
+  min-height:33px;
+}
+
+.clock{
+  text-align:center;
+  padding:4px 8px 5px;
+}
+
+.clock-time{
+  font-size:16px;
+  line-height:1;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+}
+
+.clock-label{
+  margin-top:3px;
+  font-size:7px;
+  font-weight:800;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+  opacity:.62;
+}
+
+.vline{
+  width:1px;
+  height:22px;
+  background:rgba(18,32,45,.18);
+}
+
+.single{
+  display:none;
+  grid-template-columns:1fr;
+  align-items:center;
+  min-height:33px;
+}
+
+.halftime .normal,
+.special90 .normal,
+.golden .normal{
+  display:none;
+}
+
+.halftime .single,
+.special90 .single,
+.golden .single{
+  display:grid;
+}
+
+.halftime .info,
+.special90 .info,
+.golden .info{
+  width:176px;
+}
+
+.halftime .info-top{
+  background:var(--half);
+  color:#1b1705;
+}
+
+.special90 .info-top{
+  background:var(--special);
+  color:#fff;
+}
+
+.golden .info-top{
+  background:var(--gold);
+  color:#241b00;
+}
+
+@media(max-width:600px){
+  .wrap{width:450px}
+  .name{font-size:12px}
+  .score{font-size:27px}
+  .team{grid-template-columns:54px 1fr}
+  .team.right{grid-template-columns:1fr 54px}
+  .logo-zone{width:54px}
+  .info{width:222px}
+}
 </style>
 </head>
 <body>
-<div class="stage"><div class="wrap" id="wrap">
-<div class="event-tab">ISDO'27</div>
-<div class="mainbar">
-  <div class="team"><div class="logo"><img id="logoA" alt=""><div class="initial" id="initialA">A</div></div><div class="name" id="teamA">TEAM A</div></div>
-  <div class="scorebox"><div class="score" id="scoreA">0</div><div class="hyphen">-</div><div class="score" id="scoreB">0</div></div>
-  <div class="team right"><div class="name" id="teamB">TEAM B</div><div class="logo"><img id="logoB" alt=""><div class="initial" id="initialB">B</div></div></div>
-</div>
-<div class="info">
-  <div class="info-top" id="state">FIRST HALF</div>
-  <div class="info-bottom normal">
-    <div class="clock"><div class="clock-time" id="gameClock">15:00</div><div class="clock-label">Match</div></div>
-    <div class="vline"></div>
-    <div class="clock"><div class="clock-time" id="setClock">03:00</div><div class="clock-label">Set</div></div>
+<div class="stage">
+  <div class="wrap" id="wrap">
+    <div class="event-tab">ISDO'27</div>
+
+    <div class="mainbar">
+      <div class="team">
+        <div class="logo-zone">
+          <div class="logo-art">
+            <img id="logoA" alt="">
+            <div class="initial" id="initialA">A</div>
+          </div>
+        </div>
+
+        <div class="team-name-wrap">
+          <div class="name" id="teamA">TEAM A</div>
+        </div>
+      </div>
+
+      <div class="scorebox">
+        <div class="score" id="scoreA">0</div>
+        <div class="hyphen">-</div>
+        <div class="score" id="scoreB">0</div>
+      </div>
+
+      <div class="team right">
+        <div class="team-name-wrap">
+          <div class="name" id="teamB">TEAM B</div>
+        </div>
+
+        <div class="logo-zone">
+          <div class="logo-art">
+            <img id="logoB" alt="">
+            <div class="initial" id="initialB">B</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info">
+      <div class="info-top" id="state">FIRST HALF</div>
+
+      <div class="info-bottom normal">
+        <div class="clock">
+          <div class="clock-time" id="gameClock">15:00</div>
+          <div class="clock-label">Match</div>
+        </div>
+
+        <div class="vline"></div>
+
+        <div class="clock">
+          <div class="clock-time" id="setClock">03:00</div>
+          <div class="clock-label">Set</div>
+        </div>
+      </div>
+
+      <div class="single">
+        <div class="clock">
+          <div class="clock-time" id="singleClock">03:00</div>
+          <div class="clock-label" id="singleLabel">Half Time</div>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="single"><div class="clock"><div class="clock-time" id="singleClock">03:00</div><div class="clock-label" id="singleLabel">Half Time</div></div></div>
 </div>
-</div></div>
 
 <script>
 const SUPABASE_URL="https://orqvmsttedmtenvrwfzk.supabase.co";
 const SUPABASE_KEY="sb_publishable_Nfs8j9E7aiQea5VHC_hD-Q_tHm7nWv3";
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
 let match=null,matchId=null;
-function fmt(sec){sec=Math.max(0,Number(sec||0));const m=Math.floor(sec/60),s=sec%60;return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
-function firstLetter(name,fallback){const n=(name||'').trim();return n?n[0].toUpperCase():fallback}
-function setLogo(imgId,initialId,url,letter){const img=document.getElementById(imgId),ini=document.getElementById(initialId);if(url&&String(url).startsWith('http')){img.src=url;img.style.display='block';ini.style.display='none';img.onerror=()=>{img.style.display='none';ini.style.display='block';ini.textContent=letter}}else{img.style.display='none';ini.style.display='block';ini.textContent=letter}}
-function render(){
- if(!match)return;
- const a=(match.team_a_name||'TEAM A').toUpperCase(),b=(match.team_b_name||'TEAM B').toUpperCase(),m=match.play_mode||'normal';
- teamA.textContent=a;teamB.textContent=b;scoreA.textContent=match.score_a??0;scoreB.textContent=match.score_b??0;
- gameClock.textContent=fmt(match.game_seconds);setClock.textContent=fmt(match.set_seconds);
- wrap.classList.remove('halftime','special90','golden');
- if(m==='halftime'){wrap.classList.add('halftime');state.textContent='HALF TIME';singleClock.textContent=fmt(match.halftime_seconds);singleLabel.textContent='Half Time'}
- else if(m==='special90'){wrap.classList.add('special90');state.textContent='1:30 SET';singleClock.textContent=fmt(match.set_seconds);singleLabel.textContent='Set'}
- else if(m==='golden'){wrap.classList.add('golden');state.textContent='GOLDEN SET';singleClock.textContent=fmt(match.set_seconds);singleLabel.textContent='Golden Set'}
- else{state.textContent=Number(match.half_number)===2?'SECOND HALF':'FIRST HALF'}
- setLogo('logoA','initialA',match.team_a_logo,firstLetter(a,'A'));setLogo('logoB','initialB',match.team_b_logo,firstLetter(b,'B'));
+
+function fmt(sec){
+  sec=Math.max(0,Number(sec||0));
+  const m=Math.floor(sec/60),s=sec%60;
+  return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
 }
-async function loadMatch(){const {data,error}=await db.from('matches').select('*').order('id',{ascending:true}).limit(1).maybeSingle();if(!error&&data){match=data;matchId=data.id;render()}}
-db.channel('matches-overlay-final').on('postgres_changes',{event:'*',schema:'public',table:'matches'},payload=>{if(payload.new&&(!matchId||payload.new.id===matchId)){match=payload.new;matchId=payload.new.id;render()}}).subscribe();
-loadMatch();setInterval(loadMatch,5000);
+
+function firstLetter(name,fallback){
+  const n=(name||'').trim();
+  return n?n[0].toUpperCase():fallback;
+}
+
+function setLogo(imgId,initialId,url,letter){
+  const img=document.getElementById(imgId);
+  const ini=document.getElementById(initialId);
+
+  if(url && String(url).startsWith('http')){
+    img.src=url;
+    img.style.display='block';
+    ini.style.display='none';
+
+    img.onerror=()=>{
+      img.style.display='none';
+      ini.style.display='block';
+      ini.textContent=letter;
+    };
+  }else{
+    img.style.display='none';
+    ini.style.display='block';
+    ini.textContent=letter;
+  }
+}
+
+function render(){
+  if(!match)return;
+
+  const a=(match.team_a_name||'TEAM A').toUpperCase();
+  const b=(match.team_b_name||'TEAM B').toUpperCase();
+  const m=match.play_mode||'normal';
+
+  document.getElementById('teamA').textContent=a;
+  document.getElementById('teamB').textContent=b;
+  document.getElementById('scoreA').textContent=match.score_a??0;
+  document.getElementById('scoreB').textContent=match.score_b??0;
+
+  document.getElementById('gameClock').textContent=fmt(match.game_seconds);
+  document.getElementById('setClock').textContent=fmt(match.set_seconds);
+
+  const wrap=document.getElementById('wrap');
+  wrap.classList.remove('halftime','special90','golden');
+
+  if(m==='halftime'){
+    wrap.classList.add('halftime');
+    document.getElementById('state').textContent='HALF TIME';
+    document.getElementById('singleClock').textContent=fmt(match.halftime_seconds);
+    document.getElementById('singleLabel').textContent='Half Time';
+  }else if(m==='special90'){
+    wrap.classList.add('special90');
+    document.getElementById('state').textContent='1:30 SET';
+    document.getElementById('singleClock').textContent=fmt(match.set_seconds);
+    document.getElementById('singleLabel').textContent='Set';
+  }else if(m==='golden'){
+    wrap.classList.add('golden');
+    document.getElementById('state').textContent='GOLDEN SET';
+    document.getElementById('singleClock').textContent=fmt(match.set_seconds);
+    document.getElementById('singleLabel').textContent='Golden Set';
+  }else{
+    document.getElementById('state').textContent=
+      Number(match.half_number)===2?'SECOND HALF':'FIRST HALF';
+  }
+
+  setLogo('logoA','initialA',match.team_a_logo,firstLetter(a,'A'));
+  setLogo('logoB','initialB',match.team_b_logo,firstLetter(b,'B'));
+}
+
+async function loadMatch(){
+  const {data,error}=await db
+    .from('matches')
+    .select('*')
+    .order('id',{ascending:true})
+    .limit(1)
+    .maybeSingle();
+
+  if(!error && data){
+    match=data;
+    matchId=data.id;
+    render();
+  }
+}
+
+db.channel('matches-overlay-refine-b')
+  .on('postgres_changes',{event:'*',schema:'public',table:'matches'},payload=>{
+    if(payload.new && (!matchId || payload.new.id===matchId)){
+      match=payload.new;
+      matchId=payload.new.id;
+      render();
+    }
+  })
+  .subscribe();
+
+loadMatch();
+setInterval(loadMatch,5000);
 </script>
 </body>
 </html>
