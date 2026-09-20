@@ -214,6 +214,8 @@ function render(){
     document.getElementById('teamA').value=match.team_a_id?String(match.team_a_id):'';
     document.getElementById('teamB').value=match.team_b_id?String(match.team_b_id):'';
   }
+
+  document.getElementById('category').value=match.category||'MEN';
   document.getElementById('scoreA').textContent=match.score_a??0;
   document.getElementById('scoreB').textContent=match.score_b??0;
   document.getElementById('gameTime').textContent=fmt(match.game_seconds);
@@ -414,6 +416,10 @@ document.getElementById('teamB').addEventListener('change',e=>
   selectTeam('b',e.target.value)
 );
 
+document.getElementById('category').addEventListener('change',e=>
+  patch({category:e.target.value})
+);
+
 setInterval(async()=>{
   if(!match||ticking)return;
 
@@ -447,7 +453,7 @@ setInterval(async()=>{
   ticking=false;
 },1000);
 
-db.channel('matches-control-team-select-v2')
+db.channel('matches-control-category-v3')
   .on('postgres_changes',{event:'UPDATE',schema:'public',table:'matches'},payload=>{
     if(matchId && payload.new.id===matchId){
       match=payload.new;
