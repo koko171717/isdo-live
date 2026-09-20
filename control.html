@@ -72,6 +72,15 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
 </div>
 
 <div class="card">
+  <div class="team-label">Category</div>
+  <select id="category" aria-label="Category">
+    <option value="MEN">MEN</option>
+    <option value="WOMEN">WOMEN</option>
+    <option value="MIXED">MIXED</option>
+  </select>
+</div>
+
+<div class="card">
   <div class="half" id="halfText">FIRST HALF</div>
   <div class="mode" id="modeText">NORMAL PLAY</div>
 
@@ -215,7 +224,8 @@ function render(){
     document.getElementById('teamB').value=match.team_b_id?String(match.team_b_id):'';
   }
 
-  document.getElementById('category').value=match.category||'MEN';
+  const categorySelect=document.getElementById('category');
+  if(categorySelect) categorySelect.value=match.category||'MEN';
   document.getElementById('scoreA').textContent=match.score_a??0;
   document.getElementById('scoreB').textContent=match.score_b??0;
   document.getElementById('gameTime').textContent=fmt(match.game_seconds);
@@ -416,9 +426,12 @@ document.getElementById('teamB').addEventListener('change',e=>
   selectTeam('b',e.target.value)
 );
 
-document.getElementById('category').addEventListener('change',e=>
-  patch({category:e.target.value})
-);
+const categorySelect=document.getElementById('category');
+if(categorySelect){
+  categorySelect.addEventListener('change',e=>
+    patch({category:e.target.value})
+  );
+}
 
 setInterval(async()=>{
   if(!match||ticking)return;
