@@ -120,7 +120,6 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
       <button class="ghost" onclick="resetGame()">RESET 15:00</button>
       <button class="edit-btn" id="editGameBtn" onclick="openClockEdit('game')">EDIT</button>
     </div>
-
     <div class="clock-edit hidden" id="gameEditPanel">
       <div class="clock-edit-row">
         <input id="gameEditInput" inputmode="numeric" placeholder="MM:SS">
@@ -128,7 +127,6 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
         <button class="cancel-btn" onclick="closeClockEdit('game')">CANCEL</button>
       </div>
     </div>
-  </div>
   </div>
 
   <div class="timer" id="setClockCard">
@@ -139,7 +137,6 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
       <button class="ghost" id="setResetBtn" onclick="resetSet()">RESET 3:00</button>
       <button class="edit-btn" id="editSetBtn" onclick="openClockEdit('set')">EDIT</button>
     </div>
-
     <div class="clock-edit hidden" id="setEditPanel">
       <div class="clock-edit-row">
         <input id="setEditInput" inputmode="numeric" placeholder="MM:SS">
@@ -147,7 +144,6 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
         <button class="cancel-btn" onclick="closeClockEdit('set')">CANCEL</button>
       </div>
     </div>
-  </div>
   </div>
 </div>
 
@@ -210,14 +206,14 @@ function parseClockValue(value){
 }
 
 function openClockEdit(type){
-  if(!match) return;
+  if(!match)return;
 
   if(type==='game'){
-    if(match.game_running) return;
+    if(match.game_running)return;
     document.getElementById('gameEditInput').value=fmt(gameRemaining());
     document.getElementById('gameEditPanel').classList.remove('hidden');
   }else{
-    if(match.game_running || match.set_running) return;
+    if(match.game_running || match.set_running)return;
     document.getElementById('setEditInput').value=fmt(setRemaining());
     document.getElementById('setEditPanel').classList.remove('hidden');
   }
@@ -227,27 +223,20 @@ function closeClockEdit(type){
   document.getElementById(type==='game'?'gameEditPanel':'setEditPanel').classList.add('hidden');
 }
 
-
 async function applyClockEdit(type){
-  if(!match) return;
+  if(!match)return;
 
   if(type==='game'){
     if(match.game_running){
       setStatus('Pause the match before editing the clock.');
       return;
     }
-
     const sec=parseClockValue(document.getElementById('gameEditInput').value);
     if(sec===null){
       setStatus('Use MM:SS format.');
       return;
     }
-
-    await patch({
-      game_seconds:sec,
-      game_running:false,
-      game_ends_at:null
-    });
+    await patch({game_seconds:sec,game_running:false,game_ends_at:null});
     closeClockEdit('game');
     setStatus('Match clock updated.');
   }else{
@@ -255,18 +244,12 @@ async function applyClockEdit(type){
       setStatus('Pause the match and set before editing the set clock.');
       return;
     }
-
     const sec=parseClockValue(document.getElementById('setEditInput').value);
     if(sec===null){
       setStatus('Use MM:SS format.');
       return;
     }
-
-    await patch({
-      set_seconds:sec,
-      set_running:false,
-      set_ends_at:null
-    });
+    await patch({set_seconds:sec,set_running:false,set_ends_at:null});
     closeClockEdit('set');
     setStatus('Set clock updated.');
   }
@@ -361,13 +344,11 @@ function render(){
   document.getElementById('gameBtn').className=match.game_running?'danger':'accent';
   document.getElementById('setBtn').textContent=match.set_running?'PAUSE SET':'START SET';
 
-  // Clock editing is intentionally available only while paused.
+  // Clock editing is only available while paused.
   const canEditGame=!match.game_running && !isHalf;
   const canEditSet=!match.game_running && !match.set_running && !isHalf;
-
   document.getElementById('editGameBtn').classList.toggle('hidden',!canEditGame);
   document.getElementById('editSetBtn').classList.toggle('hidden',!canEditSet);
-
   if(!canEditGame) closeClockEdit('game');
   if(!canEditSet) closeClockEdit('set');
 
