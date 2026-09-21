@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>ISDO Live — Referee Control + Clock Edit</title>
+<title>ISDO Live — Referee Control + Simple Clock Edit</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
@@ -37,12 +37,11 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
 .status{text-align:center;margin-top:10px;opacity:.72;font-size:13px}
 .clock-edit{margin-top:10px;padding-top:10px;border-top:1px solid #2b3745}
 .clock-edit-row{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
-.clock-edit input{width:110px;text-align:center;font-weight:900;font-size:18px;padding:10px}
-.clock-edit button{padding:10px 12px;font-size:14px}
+.clock-edit input{width:120px;text-align:center;font-weight:900;font-size:18px;padding:10px}
+.clock-edit button{padding:10px 14px;font-size:14px}
 .edit-btn{margin-top:8px;background:#39485a;color:#fff}
 .apply-btn{background:#71e6c1;color:#102019}
 .cancel-btn{background:#26303d;color:#fff}
-.quick-btn{background:#26303d;color:#fff}
 .hidden{display:none!important}
 @media(max-width:650px){
   .teams,.timer-grid{grid-template-columns:1fr}
@@ -124,17 +123,12 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
 
     <div class="clock-edit hidden" id="gameEditPanel">
       <div class="clock-edit-row">
-        <button class="quick-btn" onclick="adjustEdit('game',-30)">−30s</button>
-        <button class="quick-btn" onclick="adjustEdit('game',-10)">−10s</button>
         <input id="gameEditInput" inputmode="numeric" placeholder="MM:SS">
-        <button class="quick-btn" onclick="adjustEdit('game',10)">+10s</button>
-        <button class="quick-btn" onclick="adjustEdit('game',30)">+30s</button>
-      </div>
-      <div class="clock-edit-row" style="margin-top:8px">
         <button class="apply-btn" onclick="applyClockEdit('game')">APPLY</button>
         <button class="cancel-btn" onclick="closeClockEdit('game')">CANCEL</button>
       </div>
     </div>
+  </div>
   </div>
 
   <div class="timer" id="setClockCard">
@@ -148,17 +142,12 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
 
     <div class="clock-edit hidden" id="setEditPanel">
       <div class="clock-edit-row">
-        <button class="quick-btn" onclick="adjustEdit('set',-10)">−10s</button>
-        <button class="quick-btn" onclick="adjustEdit('set',-5)">−5s</button>
         <input id="setEditInput" inputmode="numeric" placeholder="MM:SS">
-        <button class="quick-btn" onclick="adjustEdit('set',5)">+5s</button>
-        <button class="quick-btn" onclick="adjustEdit('set',10)">+10s</button>
-      </div>
-      <div class="clock-edit-row" style="margin-top:8px">
         <button class="apply-btn" onclick="applyClockEdit('set')">APPLY</button>
         <button class="cancel-btn" onclick="closeClockEdit('set')">CANCEL</button>
       </div>
     </div>
+  </div>
   </div>
 </div>
 
@@ -238,13 +227,6 @@ function closeClockEdit(type){
   document.getElementById(type==='game'?'gameEditPanel':'setEditPanel').classList.add('hidden');
 }
 
-function adjustEdit(type,delta){
-  const input=document.getElementById(type==='game'?'gameEditInput':'setEditInput');
-  let sec=parseClockValue(input.value);
-  if(sec===null) sec=type==='game'?gameRemaining():setRemaining();
-  sec=Math.max(0,sec+delta);
-  input.value=fmt(sec);
-}
 
 async function applyClockEdit(type){
   if(!match) return;
