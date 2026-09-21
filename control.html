@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>ISDO Live — Referee Control vNext</title>
+<title>ISDO Live — Referee Control + Clock Edit</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
@@ -35,6 +35,14 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
 .half{text-align:center;font-size:23px;font-weight:900;margin-bottom:10px}
 .mode{text-align:center;margin:8px 0 14px;font-size:14px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
 .status{text-align:center;margin-top:10px;opacity:.72;font-size:13px}
+.clock-edit{margin-top:10px;padding-top:10px;border-top:1px solid #2b3745}
+.clock-edit-row{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
+.clock-edit input{width:110px;text-align:center;font-weight:900;font-size:18px;padding:10px}
+.clock-edit button{padding:10px 12px;font-size:14px}
+.edit-btn{margin-top:8px;background:#39485a;color:#fff}
+.apply-btn{background:#71e6c1;color:#102019}
+.cancel-btn{background:#26303d;color:#fff}
+.quick-btn{background:#26303d;color:#fff}
 .hidden{display:none!important}
 @media(max-width:650px){
   .teams,.timer-grid{grid-template-columns:1fr}
@@ -111,6 +119,21 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
     <div class="time" id="gameTime">15:00</div>
     <div class="row">
       <button class="ghost" onclick="resetGame()">RESET 15:00</button>
+      <button class="edit-btn" id="editGameBtn" onclick="openClockEdit('game')">EDIT</button>
+    </div>
+
+    <div class="clock-edit hidden" id="gameEditPanel">
+      <div class="clock-edit-row">
+        <button class="quick-btn" onclick="adjustEdit('game',-30)">−30s</button>
+        <button class="quick-btn" onclick="adjustEdit('game',-10)">−10s</button>
+        <input id="gameEditInput" inputmode="numeric" placeholder="MM:SS">
+        <button class="quick-btn" onclick="adjustEdit('game',10)">+10s</button>
+        <button class="quick-btn" onclick="adjustEdit('game',30)">+30s</button>
+      </div>
+      <div class="clock-edit-row" style="margin-top:8px">
+        <button class="apply-btn" onclick="applyClockEdit('game')">APPLY</button>
+        <button class="cancel-btn" onclick="closeClockEdit('game')">CANCEL</button>
+      </div>
     </div>
   </div>
 
@@ -120,6 +143,21 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
     <div class="row">
       <button class="accent" id="setBtn" onclick="toggleSet()">START SET</button>
       <button class="ghost" id="setResetBtn" onclick="resetSet()">RESET 3:00</button>
+      <button class="edit-btn" id="editSetBtn" onclick="openClockEdit('set')">EDIT</button>
+    </div>
+
+    <div class="clock-edit hidden" id="setEditPanel">
+      <div class="clock-edit-row">
+        <button class="quick-btn" onclick="adjustEdit('set',-10)">−10s</button>
+        <button class="quick-btn" onclick="adjustEdit('set',-5)">−5s</button>
+        <input id="setEditInput" inputmode="numeric" placeholder="MM:SS">
+        <button class="quick-btn" onclick="adjustEdit('set',5)">+5s</button>
+        <button class="quick-btn" onclick="adjustEdit('set',10)">+10s</button>
+      </div>
+      <div class="clock-edit-row" style="margin-top:8px">
+        <button class="apply-btn" onclick="applyClockEdit('set')">APPLY</button>
+        <button class="cancel-btn" onclick="closeClockEdit('set')">CANCEL</button>
+      </div>
     </div>
   </div>
 </div>
@@ -174,6 +212,83 @@ function halftimeRemaining(){
 }
 function mode(){ return match?.play_mode||'normal'; }
 function setStatus(t){ document.getElementById('status').textContent=t; }
+
+function parseClockValue(value){
+  const raw=String(value||'').trim();
+  const m=raw.match(/^(\d{1,3}):([0-5]\d)$/);
+  if(!m) return null;
+  return Number(m[1])*60+Number(m[2]);
+}
+
+function openClockEdit(type){
+  if(!match) return;
+
+  if(type==='game'){
+    if(match.game_running) return;
+    document.getElementById('gameEditInput').value=fmt(gameRemaining());
+    document.getElementById('gameEditPanel').classList.remove('hidden');
+  }else{
+    if(match.game_running || match.set_running) return;
+    document.getElementById('setEditInput').value=fmt(setRemaining());
+    document.getElementById('setEditPanel').classList.remove('hidden');
+  }
+}
+
+function closeClockEdit(type){
+  document.getElementById(type==='game'?'gameEditPanel':'setEditPanel').classList.add('hidden');
+}
+
+function adjustEdit(type,delta){
+  const input=document.getElementById(type==='game'?'gameEditInput':'setEditInput');
+  let sec=parseClockValue(input.value);
+  if(sec===null) sec=type==='game'?gameRemaining():setRemaining();
+  sec=Math.max(0,sec+delta);
+  input.value=fmt(sec);
+}
+
+async function applyClockEdit(type){
+  if(!match) return;
+
+  if(type==='game'){
+    if(match.game_running){
+      setStatus('Pause the match before editing the clock.');
+      return;
+    }
+
+    const sec=parseClockValue(document.getElementById('gameEditInput').value);
+    if(sec===null){
+      setStatus('Use MM:SS format.');
+      return;
+    }
+
+    await patch({
+      game_seconds:sec,
+      game_running:false,
+      game_ends_at:null
+    });
+    closeClockEdit('game');
+    setStatus('Match clock updated.');
+  }else{
+    if(match.game_running || match.set_running){
+      setStatus('Pause the match and set before editing the set clock.');
+      return;
+    }
+
+    const sec=parseClockValue(document.getElementById('setEditInput').value);
+    if(sec===null){
+      setStatus('Use MM:SS format.');
+      return;
+    }
+
+    await patch({
+      set_seconds:sec,
+      set_running:false,
+      set_ends_at:null
+    });
+    closeClockEdit('set');
+    setStatus('Set clock updated.');
+  }
+}
 
 function populateTeamSelects(){
   const selects=[
@@ -263,6 +378,16 @@ function render(){
   document.getElementById('gameBtn').textContent=match.game_running?'PAUSE GAME':'START GAME';
   document.getElementById('gameBtn').className=match.game_running?'danger':'accent';
   document.getElementById('setBtn').textContent=match.set_running?'PAUSE SET':'START SET';
+
+  // Clock editing is intentionally available only while paused.
+  const canEditGame=!match.game_running && !isHalf;
+  const canEditSet=!match.game_running && !match.set_running && !isHalf;
+
+  document.getElementById('editGameBtn').classList.toggle('hidden',!canEditGame);
+  document.getElementById('editSetBtn').classList.toggle('hidden',!canEditSet);
+
+  if(!canEditGame) closeClockEdit('game');
+  if(!canEditSet) closeClockEdit('set');
 
   // START GAME exists only in NORMAL PLAY and sits alone on top.
   document.getElementById('gameBtn').classList.toggle('hidden',!isNormal);
