@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ISDO Live — Overlay</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --ink:#0d1520;
+  --ink2:#172330;
+  --cream:#f7f1e8;
+  --isdo-red:#ff304f;
+  --isdo-red-deep:#c91f39;
+  --half:#f0c95a;
+  --special:#e04762;
+  --gold:#e2bb48;
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:transparent!important;
+  font-family:Arial,Helvetica,sans-serif;
+}
+
+.stage{
+  position:relative;
+  width:100vw;
+  height:100vh;
+  background:transparent;
+}
+
+.wrap{
+  position:absolute;
+  top:14px;
+  left:14px;
+  width:404px;
+  max-width:calc(100vw - 28px);
+  filter:drop-shadow(0 3px 9px rgba(0,0,0,.27));
+}
+
+.top-tabs{
+  display:flex;
+  align-items:flex-end;
+  gap:2px;
+}
+
+.event-tab{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  height:23px;
+  padding:0 12px;
+  margin-left:8px;
+  margin-bottom:-1px;
+  background:var(--isdo-red-deep);
+  color:#fff;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.10em;
+  text-transform:uppercase;
+  border-radius:3px 3px 0 0;
+}
+
+.category-tab{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  height:20px;
+  padding:0 10px;
+  background:#172330;
+  color:#fff;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+  border-top:2px solid var(--isdo-red);
+  border-radius:3px 3px 0 0;
+}
+
+.mainbar{
+  display:grid;
+  grid-template-columns:1fr 84px 1fr;
+  align-items:center;
+  min-height:39px;
+  background:var(--ink);
+  border-top:2px solid var(--isdo-red);
+  border-radius:4px;
+  overflow:hidden;
+}
+
+.team{
+  position:relative;
+  display:grid;
+  grid-template-columns:46px 1fr;
+  align-items:center;
+  min-width:0;
+  min-height:39px;
+  overflow:hidden;
+}
+
+.team.right{
+  grid-template-columns:1fr 46px;
+  text-align:right;
+}
+
+.logo-zone{
+  position:relative;
+  width:46px;
+  height:39px;
+  overflow:hidden;
+  background:
+    linear-gradient(135deg,rgba(255,48,79,.26),rgba(255,48,79,.04)),
+    #141f2b;
+}
+
+.team:not(.right) .logo-zone{
+  border-right:1px solid rgba(255,255,255,.08);
+}
+
+.team.right .logo-zone{
+  border-left:1px solid rgba(255,255,255,.08);
+}
+
+.logo-zone::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(90deg,rgba(13,21,32,0) 55%,rgba(13,21,32,.65) 100%);
+}
+
+.team.right .logo-zone::after{
+  background:linear-gradient(270deg,rgba(13,21,32,0) 55%,rgba(13,21,32,.65) 100%);
+}
+
+.logo-art{
+  position:absolute;
+  width:52px;
+  height:52px;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.logo-art img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:none;
+}
+
+.initial{
+  color:rgba(255,255,255,.88);
+  font-weight:900;
+  font-size:15px;
+}
+
+.team-name-wrap{
+  min-width:0;
+  padding:0 8px;
+}
+
+/* Team names intentionally larger than the rest of the compact UI */
+.name{
+  min-width:0;
+  font-size:13px;
+  line-height:1;
+  font-weight:900;
+  color:var(--cream);
+  text-transform:uppercase;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  letter-spacing:.005em;
+}
+
+.scorebox{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  height:39px;
+  background:var(--ink2);
+  border-left:1px solid rgba(255,255,255,.08);
+  border-right:1px solid rgba(255,255,255,.08);
+  box-shadow:inset 0 2px 0 rgba(255,48,79,.20);
+  padding-top:1px;
+}
+
+.score{
+  color:#fff;
+  font-size:23px;
+  line-height:1;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+  transform:translateY(-1px);
+}
+
+.hyphen{
+  width:2px;
+  height:18px;
+  background:rgba(255,255,255,.92);
+  border-radius:999px;
+  font-size:0;
+  box-shadow:0 0 0 1px rgba(255,255,255,.05);
+}
+
+.info{
+  width:182px;
+  margin:0 auto;
+  background:#eef1f4;
+  color:#12202d;
+  border-radius:0 0 4px 4px;
+  overflow:hidden;
+  border-top:2px solid var(--isdo-red);
+}
+
+.info-top{
+  height:15px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#dfe5e9;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+}
+
+.info-bottom{
+  display:grid;
+  grid-template-columns:1fr 1px 1fr;
+  align-items:center;
+  min-height:28px;
+}
+
+.clock{
+  text-align:center;
+  padding:3px 6px 4px;
+}
+
+.clock-time{
+  font-size:13px;
+  line-height:1;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+}
+
+.clock-label{
+  margin-top:2px;
+  font-size:6px;
+  font-weight:800;
+  letter-spacing:.10em;
+  text-transform:uppercase;
+  opacity:.62;
+}
+
+.vline{
+  width:1px;
+  height:19px;
+  background:rgba(18,32,45,.18);
+}
+
+.single{
+  display:none;
+  grid-template-columns:1fr;
+  align-items:center;
+  min-height:28px;
+}
+
+.halftime .normal,
+.special90 .normal,
+.golden .normal{
+  display:none;
+}
+
+.halftime .single,
+.special90 .single,
+.golden .single{
+  display:grid;
+}
+
+.halftime .info,
+.special90 .info,
+.golden .info{
+  width:138px;
+}
+
+.halftime .info-top{
+  background:var(--half);
+  color:#1b1705;
+}
+
+.special90 .info-top{
+  background:var(--special);
+  color:#fff;
+}
+
+.golden .info-top{
+  background:var(--gold);
+  color:#241b00;
+}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="wrap" id="wrap">
+    <div class="top-tabs">
+      <div class="event-tab">ISDO'27</div>
+      <div class="category-tab" id="categoryTab">MEN</div>
+    </div>
+
+    <div class="mainbar">
+      <div class="team">
+        <div class="logo-zone">
+          <div class="logo-art">
+            <img id="logoA" alt="">
+            <div class="initial" id="initialA">A</div>
+          </div>
+        </div>
+        <div class="team-name-wrap">
+          <div class="name" id="teamA">TEAM A</div>
+        </div>
+      </div>
+
+      <div class="scorebox">
+        <div class="score" id="scoreA">0</div>
+        <div class="hyphen">-</div>
+        <div class="score" id="scoreB">0</div>
+      </div>
+
+      <div class="team right">
+        <div class="team-name-wrap">
+          <div class="name" id="teamB">TEAM B</div>
+        </div>
+        <div class="logo-zone">
+          <div class="logo-art">
+            <img id="logoB" alt="">
+            <div class="initial" id="initialB">B</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info">
+      <div class="info-top" id="state">FIRST HALF</div>
+
+      <div class="info-bottom normal">
+        <div class="clock">
+          <div class="clock-time" id="gameClock">15:00</div>
+          <div class="clock-label">Match</div>
+        </div>
+        <div class="vline"></div>
+        <div class="clock">
+          <div class="clock-time" id="setClock">03:00</div>
+          <div class="clock-label">Set</div>
+        </div>
+      </div>
+
+      <div class="single">
+        <div class="clock">
+          <div class="clock-time" id="singleClock">03:00</div>
+          <div class="clock-label" id="singleLabel">Half Time</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL="https://orqvmsttedmtenvrwfzk.supabase.co";
+const SUPABASE_KEY="sb_publishable_Nfs8j9E7aiQea5VHC_hD-Q_tHm7nWv3";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const params=new URLSearchParams(window.location.search);
+const COURT=Math.min(4,Math.max(1,Number(params.get('court'))||1));
+document.title=`ISDO Live — Overlay — Court ${COURT}`;
+
+let match=null,matchId=null;
+
+function fmt(sec){
+  sec=Math.max(0,Number(sec||0));
+  const m=Math.floor(sec/60),s=sec%60;
+  return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+
+function remainingSeconds(storedSeconds,running,endsAt){
+  if(!running) return Math.max(0,Number(storedSeconds||0));
+  if(!endsAt) return Math.max(0,Number(storedSeconds||0));
+  return Math.max(0,Math.ceil((new Date(endsAt).getTime()-Date.now())/1000));
+}
+
+function gameRemaining(){
+  return remainingSeconds(match?.game_seconds,match?.game_running,match?.game_ends_at);
+}
+function setRemaining(){
+  return remainingSeconds(match?.set_seconds,match?.set_running,match?.set_ends_at);
+}
+function halftimeRemaining(){
+  return remainingSeconds(match?.halftime_seconds,match?.halftime_running,match?.halftime_ends_at);
+}
+
+function firstLetter(name,fallback){
+  const n=(name||'').trim();
+  return n?n[0].toUpperCase():fallback;
+}
+
+function setLogo(imgId,initialId,url,letter){
+  const img=document.getElementById(imgId);
+  const ini=document.getElementById(initialId);
+
+  if(url && String(url).startsWith('http')){
+    img.src=url;
+    img.style.display='block';
+    ini.style.display='none';
+    img.onerror=()=>{
+      img.style.display='none';
+      ini.style.display='block';
+      ini.textContent=letter;
+    };
+  }else{
+    img.style.display='none';
+    ini.style.display='block';
+    ini.textContent=letter;
+  }
+}
+
+function render(){
+  if(!match)return;
+
+  const a=(match.team_a_name||'TEAM A').toUpperCase();
+  const b=(match.team_b_name||'TEAM B').toUpperCase();
+  const m=match.play_mode||'normal';
+
+  document.getElementById('teamA').textContent=a;
+  document.getElementById('teamB').textContent=b;
+  document.getElementById('scoreA').textContent=match.score_a??0;
+  document.getElementById('scoreB').textContent=match.score_b??0;
+  document.getElementById('categoryTab').textContent=(match.category||'MEN').toUpperCase();
+  document.getElementById('gameClock').textContent=fmt(gameRemaining());
+  document.getElementById('setClock').textContent=fmt(setRemaining());
+
+  const wrap=document.getElementById('wrap');
+  wrap.classList.remove('halftime','special90','golden');
+
+  if(m==='halftime'){
+    wrap.classList.add('halftime');
+    document.getElementById('state').textContent='HALF TIME';
+    document.getElementById('singleClock').textContent=fmt(halftimeRemaining());
+    document.getElementById('singleLabel').textContent='Half Time';
+  }else if(m==='special90'){
+    wrap.classList.add('special90');
+    document.getElementById('state').textContent='1:30 SET';
+    document.getElementById('singleClock').textContent=fmt(setRemaining());
+    document.getElementById('singleLabel').textContent='Set';
+  }else if(m==='golden'){
+    wrap.classList.add('golden');
+    document.getElementById('state').textContent='GOLDEN SET';
+    document.getElementById('singleClock').textContent=fmt(setRemaining());
+    document.getElementById('singleLabel').textContent='Golden Set';
+  }else{
+    document.getElementById('state').textContent=
+      Number(match.half_number)===2?'SECOND HALF':'FIRST HALF';
+  }
+
+  setLogo('logoA','initialA',match.team_a_logo,firstLetter(a,'A'));
+  setLogo('logoB','initialB',match.team_b_logo,firstLetter(b,'B'));
+}
+
+async function loadMatch(){
+  const {data,error}=await db
+    .from('matches')
+    .select('*')
+    .eq('court_number',COURT)
+    .maybeSingle();
+
+  if(!error && data){
+    match=data;
+    matchId=data.id;
+    render();
+  }
+}
+
+db.channel(`matches-overlay-court-${COURT}`)
+  .on(
+    'postgres_changes',
+    {event:'*',schema:'public',table:'matches',filter:`court_number=eq.${COURT}`},
+    payload=>{
+      if(payload.new && payload.new.court_number===COURT){
+        match=payload.new;
+        matchId=payload.new.id;
+        render();
+      }
+    }
+  )
+  .subscribe();
+
+loadMatch();
+setInterval(render,200);
+setInterval(loadMatch,5000);
+</script>
+</body>
+</html>
