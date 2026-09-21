@@ -50,6 +50,32 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
   button{flex:1;min-width:120px}
   .primary-btn{min-width:0;font-size:19px}
 }
+
+.court-display{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:0 0 12px;
+}
+
+.court-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:120px;
+  height:36px;
+  padding:0 18px;
+  background:#172330;
+  color:#fff;
+  border-top:4px solid #c91f39;
+  border-radius:6px;
+  font-size:15px;
+  font-weight:900;
+  letter-spacing:.10em;
+  text-transform:uppercase;
+  box-shadow:0 2px 8px rgba(0,0,0,.14);
+}
+
 </style>
 </head>
 <body>
@@ -57,7 +83,9 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
 <h1>ISDO Live — Referee Control</h1>
 
 <div class="card">
-  <div class="team-label">Category</div>
+  <div class="court-display"><div class="court-badge" id="courtBadge">COURT 1</div></div>
+
+<div class="team-label">Category</div>
   <select id="category" aria-label="Category">
     <option value="MEN">MEN</option>
     <option value="WOMEN">WOMEN</option>
@@ -170,6 +198,10 @@ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const params=new URLSearchParams(window.location.search);
 const COURT=Math.min(4,Math.max(1,Number(params.get('court'))||1));
 document.title=`ISDO Live — Referee Control — Court ${COURT}`;
+document.addEventListener('DOMContentLoaded',()=>{
+  const badge=document.getElementById('courtBadge');
+  if(badge) badge.textContent=`COURT ${COURT}`;
+});
 
 let match=null,matchId=null,ticking=false;
 let teams=[];
