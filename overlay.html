@@ -387,6 +387,22 @@ function fmt(sec){
   return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
 }
 
+function remainingSeconds(storedSeconds,running,endsAt){
+  if(!running) return Math.max(0,Number(storedSeconds||0));
+  if(!endsAt) return Math.max(0,Number(storedSeconds||0));
+  return Math.max(0,Math.ceil((new Date(endsAt).getTime()-Date.now())/1000));
+}
+
+function gameRemaining(){
+  return remainingSeconds(match?.game_seconds,match?.game_running,match?.game_ends_at);
+}
+function setRemaining(){
+  return remainingSeconds(match?.set_seconds,match?.set_running,match?.set_ends_at);
+}
+function halftimeRemaining(){
+  return remainingSeconds(match?.halftime_seconds,match?.halftime_running,match?.halftime_ends_at);
+}
+
 function firstLetter(name,fallback){
   const n=(name||'').trim();
   return n?n[0].toUpperCase():fallback;
@@ -424,8 +440,8 @@ function render(){
   document.getElementById('scoreA').textContent=match.score_a??0;
   document.getElementById('scoreB').textContent=match.score_b??0;
   document.getElementById('categoryTab').textContent=(match.category||'MEN').toUpperCase();
-  document.getElementById('gameClock').textContent=fmt(match.game_seconds);
-  document.getElementById('setClock').textContent=fmt(match.set_seconds);
+  document.getElementById('gameClock').textContent=fmt(gameRemaining());
+  document.getElementById('setClock').textContent=fmt(setRemaining());
 
   const wrap=document.getElementById('wrap');
   wrap.classList.remove('halftime','special90','golden');
@@ -433,17 +449,17 @@ function render(){
   if(m==='halftime'){
     wrap.classList.add('halftime');
     document.getElementById('state').textContent='HALF TIME';
-    document.getElementById('singleClock').textContent=fmt(match.halftime_seconds);
+    document.getElementById('singleClock').textContent=fmt(halftimeRemaining());
     document.getElementById('singleLabel').textContent='Half Time';
   }else if(m==='special90'){
     wrap.classList.add('special90');
     document.getElementById('state').textContent='1:30 SET';
-    document.getElementById('singleClock').textContent=fmt(match.set_seconds);
+    document.getElementById('singleClock').textContent=fmt(setRemaining());
     document.getElementById('singleLabel').textContent='Set';
   }else if(m==='golden'){
     wrap.classList.add('golden');
     document.getElementById('state').textContent='GOLDEN SET';
-    document.getElementById('singleClock').textContent=fmt(match.set_seconds);
+    document.getElementById('singleClock').textContent=fmt(setRemaining());
     document.getElementById('singleLabel').textContent='Golden Set';
   }else{
     document.getElementById('state').textContent=
@@ -469,7 +485,7 @@ async function loadMatch(){
   }
 }
 
-db.channel('matches-overlay-category-f')
+db.channel('matches-overlay-accurate-score-refine-v5')
   .on('postgres_changes',{event:'*',schema:'public',table:'matches'},payload=>{
     if(payload.new && (!matchId || payload.new.id===matchId)){
       match=payload.new;
@@ -480,6 +496,7 @@ db.channel('matches-overlay-category-f')
   .subscribe();
 
 loadMatch();
+setInterval(render,200);
 setInterval(loadMatch,5000);
 </script>
 </body>
