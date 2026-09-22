@@ -76,6 +76,22 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
   box-shadow:0 2px 8px rgba(0,0,0,.14);
 }
 
+
+.back-row{
+  display:flex;
+  justify-content:center;
+  margin-top:8px;
+}
+.back-btn{
+  background:#26303d;
+  color:#dfe6ec;
+  border:1px solid #3a4857;
+  padding:8px 12px;
+  font-size:12px;
+  border-radius:8px;
+  min-width:0;
+}
+
 </style>
 </head>
 <body>
@@ -131,6 +147,10 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
     <button class="special" id="special90Btn" onclick="activateSpecial90()">1:30 SET</button>
     <button class="warning" id="halfTimeBtn" onclick="startHalfTime()">HALF TIME</button>
     <button class="golden hidden" id="goldenBtn" onclick="activateGoldenSet()">GOLDEN SET 3:00</button>
+  </div>
+
+  <div class="back-row hidden" id="backToMatchRow">
+    <button class="back-btn" onclick="backToMatch()">← BACK TO MATCH</button>
   </div>
 
   <div class="row hidden" id="halfControls" style="margin-top:10px">
@@ -359,6 +379,8 @@ function render(){
   const isGolden=m==='golden';
   const isNormal=m==='normal';
 
+  document.getElementById('backToMatchRow').classList.toggle('hidden',!(is90 || isGolden));
+
   if(teams.length){
     document.getElementById('teamA').value=match.team_a_id?String(match.team_a_id):'';
     document.getElementById('teamB').value=match.team_b_id?String(match.team_b_id):'';
@@ -526,9 +548,49 @@ async function resetSet(){
   });
 }
 
+
+function specialReturnKey(){
+  return `isdo-special-return-court-${COURT}`;
+}
+
+function saveReturnState(){
+  if(!match)return;
+  const snapshot={
+    game_seconds:gameRemaining(),
+    set_seconds:setRemaining(),
+    half_number:Number(match.half_number)||1
+  };
+  sessionStorage.setItem(specialReturnKey(),JSON.stringify(snapshot));
+}
+
+async function backToMatch(){
+  let snapshot=null;
+  try{
+    snapshot=JSON.parse(sessionStorage.getItem(specialReturnKey())||'null');
+  }catch(e){}
+
+  await patch({
+    play_mode:'normal',
+    is_halftime:false,
+    halftime_running:false,
+    halftime_ends_at:null,
+    game_seconds:snapshot?.game_seconds ?? Math.max(0,Number(match?.game_seconds||0)),
+    game_running:false,
+    game_ends_at:null,
+    set_seconds:snapshot?.set_seconds ?? 180,
+    set_running:false,
+    set_ends_at:null
+  });
+
+  sessionStorage.removeItem(specialReturnKey());
+}
+
 async function activateSpecial90(){
+  saveReturnState();
+  const preservedGame=gameRemaining();
   await patch({
     play_mode:'special90',
+    game_seconds:preservedGame,
     game_running:false,
     game_ends_at:null,
     set_seconds:90,
@@ -542,8 +604,11 @@ async function activateSpecial90(){
 
 async function activateGoldenSet(){
   if(Number(match.half_number)!==2)return;
+  saveReturnState();
+  const preservedGame=gameRemaining();
   await patch({
     play_mode:'golden',
+    game_seconds:preservedGame,
     game_running:false,
     game_ends_at:null,
     set_seconds:180,
@@ -603,6 +668,7 @@ async function resetHalfTime(){
 
 async function prepareSecondHalf(){
   if(!confirm('Prepare SECOND HALF?'))return;
+  sessionStorage.removeItem(specialReturnKey());
 
   await patch({
     half_number:2,
@@ -622,6 +688,7 @@ async function prepareSecondHalf(){
 
 async function resetAll(){
   if(!confirm('Reset scores, clocks and return to FIRST HALF?'))return;
+  sessionStorage.removeItem(specialReturnKey());
 
   await patch({
     score_a:0,
