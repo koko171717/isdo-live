@@ -319,6 +319,32 @@ body{
   color:#241b00;
 }
 
+
+/* Special sets: hide Match Clock and give the Set Clock the full width */
+.halftime .clock-zone,
+.special90 .clock-zone,
+.golden .clock-zone{
+  grid-template-columns:1fr;
+}
+
+.halftime .match-card,
+.special90 .match-card,
+.golden .match-card{
+  display:none;
+}
+
+.halftime .set-card .clock-time,
+.special90 .set-card .clock-time,
+.golden .set-card .clock-time{
+  font-size:22vw;
+}
+
+.halftime .set-card .clock-title,
+.special90 .set-card .clock-title,
+.golden .set-card .clock-title{
+  font-size:3vw;
+}
+
 @media (max-width:1100px){
   .screen{grid-template-rows:40vh 1fr}
   .score-strip{grid-template-columns:1fr 35vw 1fr}
@@ -326,6 +352,12 @@ body{
   .score{font-size:11.4vw}
   .match-card .clock-time{font-size:13.2vw}
   .set-card .clock-time{font-size:17.2vw}
+  .halftime .set-card .clock-time,
+  .special90 .set-card .clock-time,
+  .golden .set-card .clock-time{font-size:23vw}
+  .halftime .set-card .clock-title,
+  .special90 .set-card .clock-title,
+  .golden .set-card .clock-title{font-size:3.2vw}
 }
 </style>
 </head>
@@ -449,7 +481,7 @@ function render(){
   if(!match) return;
 
   const screen=document.getElementById('screen');
-  screen.classList.remove('halftime','golden');
+  screen.classList.remove('halftime','special90','golden');
 
   const mode=match.play_mode||'normal';
   const halfText=Number(match.half_number)===2?'SECOND HALF':'FIRST HALF';
@@ -473,6 +505,7 @@ function render(){
     document.getElementById('setTitle').textContent='Half Time';
     document.getElementById('setClock').textContent=fmt(halftimeRemaining());
   }else if(mode==='special90'){
+    screen.classList.add('special90');
     document.getElementById('phaseChip').textContent='1:30 SET';
     document.getElementById('setTitle').textContent='1:30 Set';
     document.getElementById('setClock').textContent=fmt(setRemaining());
