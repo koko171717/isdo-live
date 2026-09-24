@@ -37,7 +37,28 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
 .status{text-align:center;margin-top:10px;opacity:.72;font-size:13px}
 .clock-edit{margin-top:10px;padding-top:10px;border-top:1px solid #2b3745}
 .clock-edit-row{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
-.clock-edit input{width:120px;text-align:center;font-weight:900;font-size:18px;padding:10px}
+.clock-input-group{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+.clock-edit input{
+  width:58px;
+  text-align:center;
+  font-weight:900;
+  font-size:18px;
+  padding:10px 6px;
+}
+.clock-colon{
+  display:inline-block;
+  font-size:24px;
+  line-height:1;
+  font-weight:900;
+  color:#fff;
+  user-select:none;
+  pointer-events:none;
+}
 .clock-edit button{padding:10px 14px;font-size:14px}
 .edit-btn{margin-top:8px;background:#39485a;color:#fff}
 .apply-btn{background:#71e6c1;color:#102019}
@@ -170,7 +191,11 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
     </div>
     <div class="clock-edit hidden" id="gameEditPanel">
       <div class="clock-edit-row">
-        <input id="gameEditInput" inputmode="numeric" placeholder="MM:SS">
+        <div class="clock-input-group" aria-label="Match clock time">
+          <input id="gameEditMin" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="MM" aria-label="Minutes">
+          <span class="clock-colon">:</span>
+          <input id="gameEditSec" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="SS" aria-label="Seconds">
+        </div>
         <button class="apply-btn" onclick="applyClockEdit('game')">APPLY</button>
         <button class="cancel-btn" onclick="closeClockEdit('game')">CANCEL</button>
       </div>
@@ -187,7 +212,11 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
     </div>
     <div class="clock-edit hidden" id="setEditPanel">
       <div class="clock-edit-row">
-        <input id="setEditInput" inputmode="numeric" placeholder="MM:SS">
+        <div class="clock-input-group" aria-label="Set clock time">
+          <input id="setEditMin" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="MM" aria-label="Minutes">
+          <span class="clock-colon">:</span>
+          <input id="setEditSec" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="SS" aria-label="Seconds">
+        </div>
         <button class="apply-btn" onclick="applyClockEdit('set')">APPLY</button>
         <button class="cancel-btn" onclick="closeClockEdit('set')">CANCEL</button>
       </div>
@@ -254,11 +283,47 @@ function halftimeRemaining(){
 function mode(){ return match?.play_mode||'normal'; }
 function setStatus(t){ document.getElementById('status').textContent=t; }
 
-function parseClockValue(value){
-  const raw=String(value||'').trim();
-  const m=raw.match(/^(\d{1,3}):([0-5]\d)$/);
-  if(!m) return null;
-  return Number(m[1])*60+Number(m[2]);
+function onlyDigits(value,maxLen){
+  return String(value||'').replace(/\D/g,'').slice(0,maxLen);
+}
+
+function setSplitClockInputs(type,totalSeconds){
+  const total=Math.max(0,Number(totalSeconds||0));
+  const minutes=Math.floor(total/60);
+  const seconds=total%60;
+  document.getElementById(type+'EditMin').value=String(minutes).padStart(2,'0');
+  document.getElementById(type+'EditSec').value=String(seconds).padStart(2,'0');
+}
+
+function readSplitClockInputs(type){
+  const minEl=document.getElementById(type+'EditMin');
+  const secEl=document.getElementById(type+'EditSec');
+
+  const minRaw=onlyDigits(minEl.value,3);
+  const secRaw=onlyDigits(secEl.value,2);
+
+  // Empty fields are treated as 0. The colon is a permanent visual separator.
+  const minutes=minRaw===''?0:Number(minRaw);
+  const seconds=secRaw===''?0:Number(secRaw);
+
+  if(!Number.isFinite(minutes) || !Number.isFinite(seconds) || seconds>59) return null;
+  return minutes*60+seconds;
+}
+
+function bindClockNumberInputs(){
+  ['game','set'].forEach(type=>{
+    const minEl=document.getElementById(type+'EditMin');
+    const secEl=document.getElementById(type+'EditSec');
+
+    minEl.addEventListener('input',()=>{
+      minEl.value=onlyDigits(minEl.value,3);
+    });
+
+    secEl.addEventListener('input',()=>{
+      secEl.value=onlyDigits(secEl.value,2);
+      if(secEl.value!=='' && Number(secEl.value)>59) secEl.value='59';
+    });
+  });
 }
 
 function openClockEdit(type){
@@ -266,11 +331,11 @@ function openClockEdit(type){
 
   if(type==='game'){
     if(match.game_running)return;
-    document.getElementById('gameEditInput').value=fmt(gameRemaining());
+    setSplitClockInputs('game',gameRemaining());
     document.getElementById('gameEditPanel').classList.remove('hidden');
   }else{
     if(match.game_running || match.set_running)return;
-    document.getElementById('setEditInput').value=fmt(setRemaining());
+    setSplitClockInputs('set',setRemaining());
     document.getElementById('setEditPanel').classList.remove('hidden');
   }
 }
@@ -287,9 +352,9 @@ async function applyClockEdit(type){
       setStatus('Pause the match before editing the clock.');
       return;
     }
-    const sec=parseClockValue(document.getElementById('gameEditInput').value);
+    const sec=readSplitClockInputs('game');
     if(sec===null){
-      setStatus('Use MM:SS format.');
+      setStatus('Seconds must be between 00 and 59.');
       return;
     }
     await patch({game_seconds:sec,game_running:false,game_ends_at:null});
@@ -300,9 +365,9 @@ async function applyClockEdit(type){
       setStatus('Pause the match and set before editing the set clock.');
       return;
     }
-    const sec=parseClockValue(document.getElementById('setEditInput').value);
+    const sec=readSplitClockInputs('set');
     if(sec===null){
-      setStatus('Use MM:SS format.');
+      setStatus('Seconds must be between 00 and 59.');
       return;
     }
     await patch({set_seconds:sec,set_running:false,set_ends_at:null});
@@ -773,6 +838,7 @@ db.channel(`matches-control-court-${COURT}`)
   )
   .subscribe();
 
+bindClockNumberInputs();
 loadMatch();
 </script>
 </body>
