@@ -124,6 +124,14 @@ button,
   -webkit-tap-highlight-color:transparent;
 }
 
+
+.score-tap-guard{
+  touch-action:manipulation;
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
+}
+
 </style>
 </head>
 <body>
@@ -149,8 +157,8 @@ button,
     </select>
     <div class="score" id="scoreA">0</div>
     <div class="row">
-      <button class="ghost" onclick="changeScore('a',-1)">−</button>
-      <button class="accent" onclick="changeScore('a',1)">+</button>
+      <button class="ghost score-tap-guard" onclick="changeScore('a',-1)">−</button>
+      <button class="accent score-tap-guard" onclick="changeScore('a',1)">+</button>
     </div>
   </div>
 
@@ -161,8 +169,8 @@ button,
     </select>
     <div class="score" id="scoreB">0</div>
     <div class="row">
-      <button class="ghost" onclick="changeScore('b',-1)">−</button>
-      <button class="accent" onclick="changeScore('b',1)">+</button>
+      <button class="ghost score-tap-guard" onclick="changeScore('b',-1)">−</button>
+      <button class="accent score-tap-guard" onclick="changeScore('b',1)">+</button>
     </div>
   </div>
 </div>
@@ -851,6 +859,29 @@ db.channel(`matches-control-court-${COURT}`)
 
 bindClockNumberInputs();
 loadMatch();
+</script>
+<script>
+(function(){
+  let lastScoreTouchEnd=0;
+
+  document.addEventListener('touchend',function(e){
+    const btn=e.target.closest && e.target.closest('.score-tap-guard');
+    if(!btn) return;
+
+    const now=Date.now();
+    if(now-lastScoreTouchEnd<=350){
+      e.preventDefault();
+    }
+    lastScoreTouchEnd=now;
+  },{passive:false});
+
+  // Older iOS Safari can still interpret gesture events as zoom.
+  document.addEventListener('gesturestart',function(e){
+    if(e.target.closest && e.target.closest('.score-tap-guard')){
+      e.preventDefault();
+    }
+  },{passive:false});
+})();
 </script>
 </body>
 </html>
