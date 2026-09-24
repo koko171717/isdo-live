@@ -113,6 +113,17 @@ button{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:1
   min-width:0;
 }
 
+
+/* Prevent iOS/Safari double-tap zoom on referee controls without changing layout */
+button,
+.score-btn,
+.back-btn,
+.edit-btn,
+.apply-btn{
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+
 </style>
 </head>
 <body>
